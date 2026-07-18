@@ -156,7 +156,11 @@ export async function updatePassword(password: string) {
   return getSupabaseAccount(data.user, new Date().toISOString())
 }
 
-export async function signupWithEmail(profile: CustomerProfile, password: string) {
+export async function signupWithEmail(
+  profile: CustomerProfile,
+  password: string,
+  phoneVerification?: { challengeId: string; verificationToken: string },
+) {
   if (!isSupabaseConfigured) {
     return requestAccount('/api/auth/signup', {
       method: 'POST',
@@ -175,6 +179,8 @@ export async function signupWithEmail(profile: CustomerProfile, password: string
         postal_code: profile.postalCode,
         address_line1: profile.addressLine1,
         address_line2: profile.addressLine2,
+        phone_verification_challenge_id: phoneVerification?.challengeId,
+        phone_verification_token: phoneVerification?.verificationToken,
       },
     },
   })

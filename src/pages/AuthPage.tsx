@@ -7,10 +7,14 @@ import {
   EyeOff,
   LockKeyhole,
   MapPin,
+  MessageSquareText,
   PackageCheck,
+  QrCode,
   Search,
+  Send,
   ShieldCheck,
   ShoppingBag,
+  Smartphone,
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
 import { AccountApiError, loginWithEmail, loginWithSocial, requestPasswordReset, signupWithEmail, updatePassword } from '../accountApi'
@@ -18,6 +22,7 @@ import { openKoreanAddressSearch } from '../addressSearch'
 import { LegalDocumentModal, type LegalDocumentType } from '../components/LegalDocumentModal'
 import { saveCustomerProfile } from '../customerProfile'
 import { useI18n } from '../i18n'
+import { checkOctomoPhoneVerification, startOctomoPhoneVerification, type OctomoChallenge } from '../octomoPhoneAuth'
 import { SITE_BRAND } from '../siteBrand'
 
 interface AuthPageProps {
@@ -26,6 +31,14 @@ interface AuthPageProps {
   onSwitchMode: () => void
   onAuthComplete: (session: AuthSession) => void
 }
+
+type PhoneVerificationState = {
+  status: 'idle' | 'starting' | 'pending' | 'checking' | 'verified'
+  challenge?: OctomoChallenge
+  verificationToken?: string
+}
+
+const initialPhoneVerification: PhoneVerificationState = { status: 'idle' }
 
 const authText = {
   ko: {
@@ -190,6 +203,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   const [legalDocument, setLegalDocument] = useState<LegalDocumentType | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [resetEmailSent, setResetEmailSent] = useState(false)
+  const [phoneVerification, setPhoneVerification] = useState<PhoneVerificationState>(initialPhoneVerification)
   const addressDetailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -199,6 +213,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     setSocialProvider(null)
     setLegalDocument(null)
     setResetEmailSent(false)
+    setPhoneVerification(initialPhoneVerification)
   }, [mode])
 
   async function handleSocialAuth(provider: 'Kakao' | 'Naver') {
@@ -234,7 +249,47 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   }
 
   function validatePhone() {
-    return phone.replace(/\D/g, '').length >= 9
+    return /^010\d{8}$/.test(phone.replace(/\D/g, ''))
+  }
+
+  async function handleStartPhoneVerification() {
+    if (!validatePhone()) {
+      setError(locale === 'ko' ? '010으로 시작하는 휴대폰 번호를 입력해 주세요.' : 'Enter a valid Korean mobile number beginning with 010.')
+      return
+    }
+
+    setPhoneVerification({ status: 'starting' })
+    setError('')
+
+    try {
+      const challenge = await startOctomoPhoneVerification(phone)
+      setPhoneVerification({ status: 'pending', challenge })
+    } catch (requestError) {
+      setPhoneVerification(initialPhoneVerification)
+      setError(requestError instanceof Error ? requestError.message : '휴대폰 인증을 시작하지 못했습니다.')
+    }
+  }
+
+  async function handleCheckPhoneVerification() {
+    if (!phoneVerification.challenge) return
+
+    setPhoneVerification((current) => ({ ...current, status: 'checking' }))
+    setError('')
+
+    try {
+      const result = await checkOctomoPhoneVerification(phoneVerification.challenge.challengeId)
+      if (!result.verified || !result.verificationToken) {
+        setPhoneVerification((current) => ({ ...current, status: 'pending' }))
+        setError(locale === 'ko' ? '아직 인증 문자를 확인하지 못했습니다. 문자 발송 후 다시 확인해 주세요.' : 'We have not received the verification text yet. Send it, then check again.')
+        return
+      }
+
+      setPhoneVerification((current) => ({ ...current, status: 'verified', verificationToken: result.verificationToken }))
+      setError('')
+    } catch (requestError) {
+      setPhoneVerification((current) => ({ ...current, status: 'pending' }))
+      setError(requestError instanceof Error ? requestError.message : '휴대폰 인증 결과를 확인하지 못했습니다.')
+    }
   }
 
   async function handleAddressSearch() {
@@ -347,6 +402,10 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
         setError(locale === 'ko' ? '연락 가능한 휴대폰 번호를 입력해 주세요.' : 'Enter a valid mobile number.')
         return
       }
+      if (phoneVerification.status !== 'verified' || !phoneVerification.verificationToken || !phoneVerification.challenge) {
+        setError(locale === 'ko' ? '휴대폰 문자 인증을 완료해 주세요.' : 'Complete phone verification before continuing.')
+        return
+      }
     }
 
     if (step === 1) {
@@ -383,7 +442,10 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
       setError('')
 
       try {
-        const account = await signupWithEmail(nextProfile, password)
+        const account = await signupWithEmail(nextProfile, password, phoneVerification.status === 'verified' && phoneVerification.challenge && phoneVerification.verificationToken ? {
+          challengeId: phoneVerification.challenge.challengeId,
+          verificationToken: phoneVerification.verificationToken,
+        } : undefined)
         saveCustomerProfile(account.profile)
         onAuthComplete(account.session)
         setComplete(true)
@@ -532,7 +594,27 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
                     <div className="toss-auth-field-grid">
                       <label className="toss-auth-field-grid__wide"><span>{signupFields.email}</span><input autoFocus type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={signupFields.emailPlaceholder} autoComplete="email" /></label>
                       <label><span>{signupFields.name}</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder={signupFields.namePlaceholder} autoComplete="name" /></label>
-                      <label><span>{signupFields.phone}</span><input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={signupFields.phonePlaceholder} autoComplete="tel" inputMode="tel" /></label>
+                      <div className="toss-auth-phone-field">
+                        <label><span>{signupFields.phone}</span><input type="tel" value={phone} onChange={(event) => { setPhone(event.target.value); setPhoneVerification(initialPhoneVerification); setError('') }} placeholder={signupFields.phonePlaceholder} autoComplete="tel" inputMode="tel" /></label>
+                        <button type="button" className={phoneVerification.status === 'verified' ? 'is-verified' : ''} disabled={phoneVerification.status === 'starting' || phoneVerification.status === 'checking'} onClick={handleStartPhoneVerification}>
+                          {phoneVerification.status === 'verified' ? <><ShieldCheck size={15} /> {locale === 'ko' ? '인증 완료' : 'Verified'}</> : phoneVerification.status === 'starting' ? (locale === 'ko' ? '준비 중…' : 'Starting…') : <><Smartphone size={15} /> {locale === 'ko' ? '휴대폰 인증' : 'Verify phone'}</>}
+                        </button>
+                      </div>
+                      {phoneVerification.challenge && phoneVerification.status !== 'verified' ? (
+                        <section className="toss-auth-phone-verification toss-auth-field-grid__wide" aria-label={locale === 'ko' ? '휴대폰 문자 인증' : 'Phone verification'}>
+                          <div className="toss-auth-phone-verification__copy">
+                            <span className="toss-auth-phone-verification__icon"><MessageSquareText size={20} /></span>
+                            <div><strong>{locale === 'ko' ? '아래 내용을 문자로 보내주세요' : 'Send the text below'}</strong><p>{phoneVerification.challenge.recipient} · {locale === 'ko' ? '5분 안에 전송' : 'Send within 5 minutes'}</p></div>
+                          </div>
+                          <div className="toss-auth-phone-verification__code"><span>{phoneVerification.challenge.code}</span><small>{locale === 'ko' ? '인증 문자 내용' : 'Message text'}</small></div>
+                          <img className="toss-auth-phone-verification__qr" src={phoneVerification.challenge.qrCode} alt={locale === 'ko' ? '문자 앱을 여는 QR 코드' : 'QR code that opens your messaging app'} />
+                          <div className="toss-auth-phone-verification__actions">
+                            <a href={`sms:${phoneVerification.challenge.recipient.replace(/\D/g, '')}?body=${encodeURIComponent(phoneVerification.challenge.code)}`}><Send size={15} /> {locale === 'ko' ? '문자 앱 열기' : 'Open messages'}</a>
+                            <button type="button" disabled={phoneVerification.status === 'checking'} onClick={handleCheckPhoneVerification}><QrCode size={15} /> {phoneVerification.status === 'checking' ? (locale === 'ko' ? '확인 중…' : 'Checking…') : (locale === 'ko' ? '문자 보냈어요' : 'I sent the text')}</button>
+                          </div>
+                        </section>
+                      ) : null}
+                      {phoneVerification.status === 'verified' ? <p className="toss-auth-phone-verified toss-auth-field-grid__wide"><ShieldCheck size={16} /> {locale === 'ko' ? '휴대폰 점유 인증이 완료됐습니다.' : 'Phone possession verified.'}</p> : null}
                     </div>
                   ) : null}
                   {step === 1 ? (
