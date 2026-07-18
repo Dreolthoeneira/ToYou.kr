@@ -14317,6 +14317,21 @@ body {
   line-height: 1.5;
 }
 
+.toss-auth-success {
+  margin: -4px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #bfd9c6;
+  border-radius: 6px;
+  background: #f1f8f3;
+  color: #2d6a3e;
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.toss-auth-form--recovery {
+  margin-top: 34px;
+}
+
 .toss-auth-switch {
   display: flex;
   justify-content: center;

@@ -13,7 +13,7 @@ import {
   ShoppingBag,
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
-import { loginWithEmail, loginWithSocial, signupWithEmail } from '../accountApi'
+import { AccountApiError, loginWithEmail, loginWithSocial, requestPasswordReset, signupWithEmail, updatePassword } from '../accountApi'
 import { openKoreanAddressSearch } from '../addressSearch'
 import { LegalDocumentModal, type LegalDocumentType } from '../components/LegalDocumentModal'
 import { saveCustomerProfile } from '../customerProfile'
@@ -172,6 +172,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   const { locale } = useI18n()
   const copy = locale === 'ko' ? authText.ko : authText.en
   const isLogin = mode === 'login'
+  const isRecovery = isLogin && new URLSearchParams(window.location.search).get('recovery') === '1'
   const [step, setStep] = useState(0)
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -188,6 +189,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   const [socialProvider, setSocialProvider] = useState<'Kakao' | 'Naver' | null>(null)
   const [legalDocument, setLegalDocument] = useState<LegalDocumentType | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState(false)
   const addressDetailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -196,6 +198,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     setComplete(false)
     setSocialProvider(null)
     setLegalDocument(null)
+    setResetEmailSent(false)
   }, [mode])
 
   async function handleSocialAuth(provider: 'Kakao' | 'Naver') {
@@ -266,7 +269,63 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
       onAuthComplete(account.session)
       setComplete(true)
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '로그인하지 못했습니다.')
+      if (requestError instanceof AccountApiError && requestError.code === 'invalid_credentials') {
+        setError(locale === 'ko' ? '이메일 또는 비밀번호가 올바르지 않습니다.' : 'The email or password is incorrect.')
+      } else if (requestError instanceof AccountApiError && requestError.code === 'email_not_confirmed') {
+        setError(locale === 'ko' ? '이메일 인증을 완료한 뒤 로그인해 주세요.' : 'Confirm your email before signing in.')
+      } else {
+        setError(requestError instanceof Error ? requestError.message : '로그인하지 못했습니다.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!validateEmail()) {
+      setError(locale === 'ko' ? '가입한 이메일 주소를 먼저 입력해 주세요.' : 'Enter the email address you used to sign up.')
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      await requestPasswordReset(email.trim())
+      setResetEmailSent(true)
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : '비밀번호 재설정 메일을 보내지 못했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handlePasswordUpdate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setError(locale === 'ko' ? '영문과 숫자를 포함해 8자 이상 입력해 주세요.' : 'Use at least 8 characters with letters and numbers.')
+      return
+    }
+    if (password !== confirmPassword) {
+      setError(locale === 'ko' ? '비밀번호가 서로 일치하지 않아요.' : 'Passwords do not match.')
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const account = await updatePassword(password)
+      saveCustomerProfile(account.profile)
+      onAuthComplete(account.session)
+      setComplete(true)
+    } catch (requestError) {
+      if (requestError instanceof AccountApiError && requestError.code === 'session_not_found') {
+        setError(locale === 'ko' ? '재설정 링크가 만료되었습니다. 로그인 화면에서 새 메일을 요청해 주세요.' : 'This reset link has expired. Request a new email from the sign-in page.')
+      } else {
+        setError(requestError instanceof Error ? requestError.message : '비밀번호를 변경하지 못했습니다.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -406,11 +465,25 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
             {complete ? (
               <div className="toss-auth-complete">
                 <span className="toss-auth-complete__check"><Check size={28} /></span>
-                <span className="eyebrow">{isLogin ? copy.login.completeEyebrow : socialProvider ? copy.signup.socialCompleteEyebrow : copy.signup.completeEyebrow}</span>
-                <h2>{isLogin ? copy.login.completeTitle : socialProvider ? copy.signup.socialCompleteTitle : copy.signup.completeTitle}</h2>
-                <p>{isLogin ? copy.login.completeBody : socialProvider ? copy.signup.socialCompleteBody : copy.signup.completeBody}</p>
+                <span className="eyebrow">{isRecovery ? 'PASSWORD UPDATED' : isLogin ? copy.login.completeEyebrow : socialProvider ? copy.signup.socialCompleteEyebrow : copy.signup.completeEyebrow}</span>
+                <h2>{isRecovery ? (locale === 'ko' ? '새 비밀번호로 변경했어요' : 'Your password is updated') : isLogin ? copy.login.completeTitle : socialProvider ? copy.signup.socialCompleteTitle : copy.signup.completeTitle}</h2>
+                <p>{isRecovery ? (locale === 'ko' ? '이제 새 비밀번호로 로그인할 수 있어요.' : 'You can now sign in with your new password.') : isLogin ? copy.login.completeBody : socialProvider ? copy.signup.socialCompleteBody : copy.signup.completeBody}</p>
                 <button type="button" className="toss-auth-primary" onClick={onGoHome}>{copy.header.home} <ArrowRight size={17} /></button>
               </div>
+            ) : isRecovery ? (
+              <>
+                <div className="toss-auth-panel__heading">
+                  <span className="eyebrow">PASSWORD RESET</span>
+                  <h2>{locale === 'ko' ? '새 비밀번호를 입력해 주세요' : 'Enter a new password'}</h2>
+                  <p>{locale === 'ko' ? '영문과 숫자를 포함해 8자 이상으로 만들어 주세요.' : 'Use at least 8 characters with letters and numbers.'}</p>
+                </div>
+                <form className="toss-auth-form toss-auth-form--recovery" onSubmit={handlePasswordUpdate} noValidate>
+                  <label><span>{locale === 'ko' ? '새 비밀번호' : 'New password'}</span><div className="toss-auth-password"><input autoFocus type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={locale === 'ko' ? '8자 이상 입력하세요' : 'At least 8 characters'} autoComplete="new-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
+                  <label><span>{locale === 'ko' ? '새 비밀번호 확인' : 'Confirm new password'}</span><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder={locale === 'ko' ? '한 번 더 입력하세요' : 'Enter it again'} autoComplete="new-password" /></label>
+                  {error ? <p className="toss-auth-error" role="alert">{error}</p> : null}
+                  <button type="submit" disabled={submitting} className="toss-auth-primary">{submitting ? (locale === 'ko' ? '변경 중…' : 'Updating…') : (locale === 'ko' ? '비밀번호 변경' : 'Update password')} <ArrowRight size={17} /></button>
+                </form>
+              </>
             ) : isLogin ? (
               <>
                 <div className="toss-auth-panel__heading">
@@ -428,7 +501,8 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
                 <form className="toss-auth-form" onSubmit={handleLogin} noValidate>
                   <label><span>{copy.login.email}</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={copy.login.emailPlaceholder} autoComplete="email" /></label>
                   <label><span>{copy.login.password}</span><div className="toss-auth-password"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={copy.login.passwordPlaceholder} autoComplete="current-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
-                  <button type="button" className="toss-auth-forgot">{copy.login.forgot}</button>
+                  <button type="button" disabled={submitting} className="toss-auth-forgot" onClick={handleForgotPassword}>{resetEmailSent ? (locale === 'ko' ? '재설정 메일 다시 보내기' : 'Send the reset email again') : copy.login.forgot}</button>
+                  {resetEmailSent ? <p className="toss-auth-success" role="status">{locale === 'ko' ? '비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 눌러 새 비밀번호를 설정해 주세요.' : 'We sent a password reset email. Open its link to choose a new password.'}</p> : null}
                   {error ? <p className="toss-auth-error" role="alert">{error}</p> : null}
                   <button type="submit" disabled={submitting} className="toss-auth-primary">{submitting ? (locale === 'ko' ? '확인 중…' : 'Signing in…') : copy.login.submit} <ArrowRight size={17} /></button>
                 </form>

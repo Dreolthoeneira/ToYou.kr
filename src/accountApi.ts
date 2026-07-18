@@ -30,10 +30,12 @@ type ProfileRow = {
 
 export class AccountApiError extends Error {
   status: number
+  code?: string
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code?: string) {
     super(message)
     this.status = status
+    this.code = code
   }
 }
 
@@ -124,7 +126,33 @@ export async function loginWithEmail(email: string, password: string) {
   }
 
   const { data, error } = await requireSupabase().auth.signInWithPassword({ email, password })
-  if (error || !data.user) throw new AccountApiError(error?.message || '로그인하지 못했습니다.', 401)
+  if (error || !data.user) throw new AccountApiError(error?.message || '로그인하지 못했습니다.', error?.status ?? 401, error?.code)
+  return getSupabaseAccount(data.user, new Date().toISOString())
+}
+
+export async function requestPasswordReset(email: string) {
+  if (!isSupabaseConfigured) {
+    throw new AccountApiError('비밀번호 재설정은 운영 사이트에서 이용해 주세요.', 503)
+  }
+
+  const redirectTo = new URL('login?recovery=1', getPublicAppUrl()).toString()
+  const { error } = await requireSupabase().auth.resetPasswordForEmail(email, { redirectTo })
+
+  if (error) {
+    throw new AccountApiError(error.message || '비밀번호 재설정 메일을 보내지 못했습니다.', error.status ?? 400, error.code)
+  }
+}
+
+export async function updatePassword(password: string) {
+  if (!isSupabaseConfigured) {
+    throw new AccountApiError('비밀번호 재설정은 운영 사이트에서 이용해 주세요.', 503)
+  }
+
+  const { data, error } = await requireSupabase().auth.updateUser({ password })
+  if (error || !data.user) {
+    throw new AccountApiError(error?.message || '비밀번호를 변경하지 못했습니다.', error?.status ?? 400, error?.code)
+  }
+
   return getSupabaseAccount(data.user, new Date().toISOString())
 }
 
