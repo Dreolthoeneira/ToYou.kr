@@ -6,6 +6,7 @@ data/*.sqlite*
 .env.local
 .env.*.local
 .supabase
+supabase/.temp
 .vs
 .agents
 .codex-temp
