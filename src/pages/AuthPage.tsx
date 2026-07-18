@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
 import { loginWithEmail, loginWithSocial, signupWithEmail } from '../accountApi'
+import { LegalDocumentModal, type LegalDocumentType } from '../components/LegalDocumentModal'
 import { saveCustomerProfile } from '../customerProfile'
 import { useI18n } from '../i18n'
 import { SITE_BRAND } from '../siteBrand'
@@ -74,7 +75,7 @@ const authText = {
       },
       next: '다음',
       submit: '가입 완료',
-      terms: '이용약관과 개인정보 처리방침에 동의합니다.',
+      terms: '[필수] 이용약관 및 개인정보 처리방침에 동의합니다.',
       switchPrompt: '이미 계정이 있나요?',
       switchAction: '로그인',
       socialDivider: '또는 이메일로 가입',
@@ -141,7 +142,7 @@ const authText = {
       },
       next: 'Continue',
       submit: 'Create account',
-      terms: 'I agree to the Terms and Privacy Policy.',
+      terms: '[Required] I agree to the Terms and Privacy Policy.',
       switchPrompt: 'Already have an account?',
       switchAction: 'Sign in',
       socialDivider: 'or sign up with email',
@@ -182,7 +183,8 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [complete, setComplete] = useState(false)
-  const [socialProvider, setSocialProvider] = useState<'Kakao' | 'Google' | 'Naver' | null>(null)
+  const [socialProvider, setSocialProvider] = useState<'Kakao' | 'Naver' | null>(null)
+  const [legalDocument, setLegalDocument] = useState<LegalDocumentType | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -190,9 +192,15 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     setError('')
     setComplete(false)
     setSocialProvider(null)
+    setLegalDocument(null)
   }, [mode])
 
-  async function handleSocialAuth(provider: 'Kakao' | 'Google' | 'Naver') {
+  async function handleSocialAuth(provider: 'Kakao' | 'Naver') {
+    if (!isLogin && !agreed) {
+      setError(locale === 'ko' ? '간편가입을 계속하려면 필수 약관에 동의해 주세요.' : 'Agree to the required terms before quick sign-up.')
+      return
+    }
+
     setSubmitting(true)
     setError('')
 
@@ -210,7 +218,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     }
   }
 
-  function getSocialLabel(provider: 'Kakao' | 'Google' | 'Naver') {
+  function getSocialLabel(provider: 'Kakao' | 'Naver') {
     if (locale === 'ko') return `${provider}로 간편 ${isLogin ? '로그인' : '가입'}`
     return `${isLogin ? 'Sign in' : 'Sign up'} with ${provider}`
   }
@@ -318,6 +326,31 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
 
   const signupStep = copy.signup.steps[step]
   const signupFields = copy.signup.fields
+  const legalConsent = (
+    <div className="toss-auth-legal-consent">
+      <label className="toss-auth-terms">
+        <input
+          type="checkbox"
+          checked={agreed}
+          aria-required="true"
+          onChange={(event) => {
+            setAgreed(event.target.checked)
+            if (event.target.checked) setError('')
+          }}
+        />
+        <span>{copy.signup.terms}</span>
+      </label>
+      <div className="toss-auth-legal-links" aria-label={locale === 'ko' ? '가입 약관 문서' : 'Registration documents'}>
+        <button type="button" aria-haspopup="dialog" onClick={() => setLegalDocument('terms')}>
+          {locale === 'ko' ? '이용약관 보기' : 'View Terms'}
+        </button>
+        <i aria-hidden="true" />
+        <button type="button" aria-haspopup="dialog" onClick={() => setLegalDocument('privacy')}>
+          {locale === 'ko' ? '개인정보 처리방침 보기' : 'View Privacy Policy'}
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="toss-auth-page">
@@ -372,7 +405,6 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
 
                 <div className="toss-auth-social">
                   <button type="button" disabled={submitting} aria-label={getSocialLabel('Kakao')} onClick={() => handleSocialAuth('Kakao')}><img src={`${import.meta.env.BASE_URL}logos/kakao.svg`} alt="" /><span>Kakao</span></button>
-                  <button type="button" disabled={submitting} aria-label={getSocialLabel('Google')} onClick={() => handleSocialAuth('Google')}><img src={`${import.meta.env.BASE_URL}logos/google.svg`} alt="" /><span>Google</span></button>
                   <button type="button" disabled={submitting} aria-label={getSocialLabel('Naver')} onClick={() => handleSocialAuth('Naver')}><img src={`${import.meta.env.BASE_URL}logos/naver.svg`} alt="" /><span>Naver</span></button>
                 </div>
                 <div className="toss-auth-divider"><span>{copy.login.socialDivider}</span></div>
@@ -398,9 +430,9 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
                   <>
                     <div className="toss-auth-social toss-auth-social--signup">
                       <button type="button" disabled={submitting} aria-label={getSocialLabel('Kakao')} onClick={() => handleSocialAuth('Kakao')}><img src={`${import.meta.env.BASE_URL}logos/kakao.svg`} alt="" /><span>Kakao</span></button>
-                      <button type="button" disabled={submitting} aria-label={getSocialLabel('Google')} onClick={() => handleSocialAuth('Google')}><img src={`${import.meta.env.BASE_URL}logos/google.svg`} alt="" /><span>Google</span></button>
                       <button type="button" disabled={submitting} aria-label={getSocialLabel('Naver')} onClick={() => handleSocialAuth('Naver')}><img src={`${import.meta.env.BASE_URL}logos/naver.svg`} alt="" /><span>Naver</span></button>
                     </div>
+                    {legalConsent}
                     <div className="toss-auth-divider toss-auth-divider--signup"><span>{copy.signup.socialDivider}</span></div>
                   </>
                 ) : null}
@@ -425,7 +457,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
                     <>
                       <label><span>{signupFields.password}</span><div className="toss-auth-password"><input autoFocus type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={signupFields.passwordPlaceholder} autoComplete="new-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
                       <label><span>{signupFields.confirmPassword}</span><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder={signupFields.confirmPlaceholder} autoComplete="new-password" /></label>
-                      <label className="toss-auth-terms"><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>{copy.signup.terms}</span></label>
+                      {legalConsent}
                     </>
                   ) : null}
                   {error ? <p className="toss-auth-error" role="alert">{error}</p> : null}
@@ -441,6 +473,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
           </div>
         </section>
       </main>
+      {legalDocument ? <LegalDocumentModal documentType={legalDocument} locale={locale} onClose={() => setLegalDocument(null)} /> : null}
     </div>
   )
 }
