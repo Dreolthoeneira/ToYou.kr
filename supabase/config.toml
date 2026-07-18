@@ -43,3 +43,6 @@ max_indexes = 5
 
 [functions.catalog-tools]
 verify_jwt = false
+
+[functions.naver-userinfo]
+verify_jwt = false

@@ -1,4 +1,4 @@
-import type { User } from '@supabase/supabase-js'
+import type { Provider, User } from '@supabase/supabase-js'
 import type { AuthSession } from './authSession'
 import type { CustomerProfile } from './customerProfile'
 import { getPublicAppUrl, isSupabaseConfigured, requireSupabase } from './supabaseClient'
@@ -6,6 +6,14 @@ import { getPublicAppUrl, isSupabaseConfigured, requireSupabase } from './supaba
 export interface AccountData {
   session: AuthSession
   profile: CustomerProfile
+}
+
+export type SocialProvider = 'Kakao' | 'Google' | 'Naver'
+
+const SOCIAL_OAUTH_PROVIDERS: Record<SocialProvider, Provider> = {
+  Kakao: 'kakao',
+  Google: 'google',
+  Naver: 'custom:naver',
 }
 
 type ProfileRow = {
@@ -150,7 +158,18 @@ export async function signupWithEmail(profile: CustomerProfile, password: string
   return getSupabaseAccount(data.user, new Date().toISOString())
 }
 
-export async function loginWithSocialDemo(provider: 'Kakao' | 'Google' | 'Naver'): Promise<AccountData | null> {
+async function getSocialAuthError(response: Response, provider: SocialProvider) {
+  const payload = await response.json().catch(() => null) as { msg?: string; message?: string } | null
+  const message = payload?.msg ?? payload?.message ?? ''
+
+  if (/unsupported provider|provider .* not found|provider is not enabled/i.test(message)) {
+    return `${provider} 간편 로그인이 아직 연결되지 않았습니다. 관리자 설정이 완료된 뒤 다시 시도해 주세요.`
+  }
+
+  return message || `${provider} 로그인 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.`
+}
+
+export async function loginWithSocial(provider: SocialProvider): Promise<AccountData | null> {
   if (!isSupabaseConfigured) {
     return requestAccount('/api/auth/social-demo', {
       method: 'POST',
@@ -158,15 +177,36 @@ export async function loginWithSocialDemo(provider: 'Kakao' | 'Google' | 'Naver'
     }) as Promise<AccountData>
   }
 
-  if (provider === 'Naver') {
-    throw new AccountApiError('네이버 로그인은 Supabase의 사용자 지정 OIDC 공급자 설정 후 사용할 수 있습니다.', 501)
-  }
-
-  const { error } = await requireSupabase().auth.signInWithOAuth({
-    provider: provider === 'Kakao' ? 'kakao' : 'google',
-    options: { redirectTo: getPublicAppUrl() },
+  const { data, error } = await requireSupabase().auth.signInWithOAuth({
+    provider: SOCIAL_OAUTH_PROVIDERS[provider],
+    options: {
+      redirectTo: getPublicAppUrl(),
+      skipBrowserRedirect: true,
+    },
   })
   if (error) throw new AccountApiError(error.message, 400)
+  if (!data.url) throw new AccountApiError(`${provider} 로그인 주소를 만들지 못했습니다.`, 500)
+
+  // signInWithOAuth normally redirects before a disabled-provider response can be
+  // handled by the app. Probe the authorize endpoint first so users see a useful
+  // Korean message instead of Supabase's raw JSON error page.
+  try {
+    const response = await fetch(data.url, {
+      method: 'GET',
+      credentials: 'omit',
+      redirect: 'manual',
+    })
+
+    if (response.status >= 400) {
+      throw new AccountApiError(await getSocialAuthError(response, provider), response.status)
+    }
+  } catch (probeError) {
+    if (probeError instanceof AccountApiError) throw probeError
+    // Some browsers hide cross-origin manual redirects. In that case the real
+    // navigation below is still the correct and safe OAuth flow.
+  }
+
+  window.location.assign(data.url)
   return null
 }
 

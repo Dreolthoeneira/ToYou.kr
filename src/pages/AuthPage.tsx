@@ -12,7 +12,7 @@ import {
   ShoppingBag,
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
-import { loginWithEmail, loginWithSocialDemo, signupWithEmail } from '../accountApi'
+import { loginWithEmail, loginWithSocial, signupWithEmail } from '../accountApi'
 import { saveCustomerProfile } from '../customerProfile'
 import { useI18n } from '../i18n'
 import { SITE_BRAND } from '../siteBrand'
@@ -197,7 +197,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     setError('')
 
     try {
-      const account = await loginWithSocialDemo(provider)
+      const account = await loginWithSocial(provider)
       if (!account) return
       saveCustomerProfile(account.profile)
       onAuthComplete(account.session)
