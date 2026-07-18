@@ -9476,14 +9476,26 @@ body {
   color: #2e7042;
 }
 
+.toss-auth-phone-field > button.is-pending {
+  border-color: #dcb7a8;
+  background: #fbf4ef;
+  color: #a44e39;
+}
+
+.toss-auth-phone-field > button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .toss-auth-phone-verification {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  padding: 18px;
+  grid-template-columns: minmax(0, 1fr) 152px;
+  gap: 14px 18px;
+  padding: 20px;
   border: 1px solid #e1c8bd;
-  border-radius: 12px;
-  background: #fbf4ef;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fffaf6 0%, #fbf1eb 100%);
+  box-shadow: 0 12px 34px rgba(91, 56, 41, 0.07);
 }
 
 .toss-auth-phone-verification__copy {
@@ -9500,7 +9512,8 @@ body {
 }
 
 .toss-auth-phone-verification__copy p,
-.toss-auth-phone-verification__code small {
+.toss-auth-phone-verification__code small,
+.toss-auth-phone-verification__expired p {
   margin: 4px 0 0;
   color: var(--auth-muted);
   font-size: 0.64rem;
@@ -9518,8 +9531,9 @@ body {
 }
 
 .toss-auth-phone-verification__code {
+  position: relative;
   grid-column: 1;
-  padding: 13px 15px;
+  padding: 13px 88px 13px 15px;
   border: 1px dashed #cfaa9c;
   border-radius: 8px;
   background: #ffffff;
@@ -9531,14 +9545,84 @@ body {
   letter-spacing: 0.12em;
 }
 
-.toss-auth-phone-verification__qr {
-  width: 112px;
-  height: 112px;
+.toss-auth-phone-verification__code button {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid #e2d2c8;
+  border-radius: 7px;
+  background: #fbf7f3;
+  color: #875140;
+  font: inherit;
+  font-size: 0.61rem;
+  font-weight: 750;
+  transform: translateY(-50%);
+}
+
+.toss-auth-phone-verification__qr-wrap {
+  display: grid;
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
+  align-content: start;
+  justify-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.toss-auth-phone-verification__qr {
+  width: 148px;
+  height: 148px;
   border: 8px solid #ffffff;
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(71, 49, 37, 0.1);
   object-fit: cover;
+}
+
+.toss-auth-phone-verification__qr-wrap figcaption {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #8a6253;
+  font-size: 0.59rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.toss-auth-phone-verification__steps {
+  display: grid;
+  grid-column: 1;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toss-auth-phone-verification__steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6f625b;
+  font-size: 0.64rem;
+}
+
+.toss-auth-phone-verification__steps li span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e2c8bc;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #a5503d;
+  font-size: 0.58rem;
+  font-weight: 800;
 }
 
 .toss-auth-phone-verification__actions {
@@ -9563,6 +9647,79 @@ body {
   font-size: 0.7rem;
   font-weight: 750;
   text-decoration: none;
+}
+
+.toss-auth-phone-verification__actions a {
+  border-color: #c96952;
+  background: #b9543f;
+  color: #ffffff;
+}
+
+.toss-auth-phone-verification__actions a:hover,
+.toss-auth-phone-verification__actions button:hover,
+.toss-auth-phone-verification__code button:hover {
+  transform: translateY(-1px);
+}
+
+.toss-auth-phone-verification__code button:hover {
+  transform: translateY(calc(-50% - 1px));
+}
+
+.toss-auth-phone-verification__auto {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: -2px 0 0;
+  color: #7c6b62;
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.toss-auth-phone-verification__auto i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4f9a65;
+  box-shadow: 0 0 0 0 rgba(79, 154, 101, 0.35);
+  animation: phone-verification-pulse 1.8s ease-out infinite;
+}
+
+.toss-auth-phone-verification.is-expired {
+  display: block;
+  border-color: #dfc9c0;
+  background: #fbf6f2;
+  box-shadow: none;
+}
+
+.toss-auth-phone-verification__expired {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.toss-auth-phone-verification__expired strong {
+  color: var(--auth-ink);
+  font-size: 0.76rem;
+}
+
+.toss-auth-phone-verification__expired > button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #d7b6a8;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #974a38;
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 750;
+}
+
+@keyframes phone-verification-pulse {
+  70% { box-shadow: 0 0 0 7px rgba(79, 154, 101, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 154, 101, 0); }
 }
 
 .toss-auth-phone-verified {
@@ -9594,14 +9751,39 @@ body {
 
   .toss-auth-phone-verification {
     grid-template-columns: 1fr;
+    padding: 17px;
   }
 
-  .toss-auth-phone-verification__qr {
-    width: min(180px, 100%);
-    height: auto;
+  .toss-auth-phone-verification__qr-wrap {
     grid-column: 1;
     grid-row: auto;
     justify-self: center;
+  }
+
+  .toss-auth-phone-verification__qr {
+    width: 190px;
+    height: 190px;
+  }
+
+  .toss-auth-phone-verification__steps {
+    grid-column: 1;
+  }
+
+  .toss-auth-phone-verification__actions,
+  .toss-auth-phone-verification__expired {
+    grid-template-columns: 1fr;
+  }
+
+  .toss-auth-phone-verification__actions {
+    flex-direction: column;
+  }
+
+  .toss-auth-phone-verification__expired {
+    display: grid;
+  }
+
+  .toss-auth-phone-verification__expired > button {
+    grid-column: 1 / -1;
   }
 }
 
