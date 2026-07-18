@@ -26,6 +26,10 @@ max_frequency = "1m0s"
 otp_length = 8
 otp_expiry = 3600
 
+[auth.email.template.confirmation]
+subject = "[TO YOU] 이메일 인증을 완료해 주세요"
+content_path = "./supabase/templates/confirmation.html"
+
 [auth.mfa]
 max_enrolled_factors = 10
 

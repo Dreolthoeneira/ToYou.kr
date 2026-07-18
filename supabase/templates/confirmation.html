@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TO YOU 이메일 인증</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f5f5f7;color:#111827;font-family:Arial,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f5f5f7;">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:560px;background:#ffffff;border:1px solid #e5e7eb;border-radius:24px;">
+            <tr>
+              <td style="padding:38px 38px 0;">
+                <img src="https://toyou.kr/email-logo.png" width="180" alt="TO YOU" style="display:block;width:180px;max-width:100%;height:auto;border:0;">
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:40px 38px 42px;">
+                <p style="margin:0 0 12px;color:#f97316;font-size:12px;font-weight:700;letter-spacing:1.6px;">WELCOME TO TO YOU</p>
+                <h1 style="margin:0;color:#111827;font-size:28px;line-height:1.35;letter-spacing:-0.8px;">이메일을 인증해 주세요</h1>
+                <p style="margin:18px 0 0;color:#667085;font-size:15px;line-height:1.75;">아래 버튼을 누르면 이메일 인증과 회원가입이 완료됩니다.</p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin-top:30px;">
+                  <tr>
+                    <td align="center" bgcolor="#111827" style="border-radius:14px;">
+                      <a href="{{ .ConfirmationURL }}" style="display:block;padding:17px 24px;color:#ffffff;font-size:16px;font-weight:700;text-align:center;text-decoration:none;">이메일 인증하기</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:28px 0 0;color:#98a2b3;font-size:12px;line-height:1.7;">버튼이 열리지 않으면 아래 주소를 브라우저에 복사해 주세요.</p>
+                <p style="margin:8px 0 0;word-break:break-all;color:#667085;font-size:11px;line-height:1.6;">{{ .ConfirmationURL }}</p>
+                <p style="margin:28px 0 0;padding-top:24px;border-top:1px solid #eaecf0;color:#98a2b3;font-size:12px;line-height:1.7;">본인이 요청하지 않았다면 이 메일을 무시해 주세요.<br>TO YOU · Toyou.kr</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

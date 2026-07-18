@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="88" viewBox="0 0 360 88" role="img" aria-labelledby="title description">
+  <title id="title">TO YOU</title>
+  <desc id="description">TO YOU 브랜드 로고</desc>
+  <defs>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff916c"/>
+      <stop offset="0.48" stop-color="#ffbe62"/>
+      <stop offset="1" stop-color="#48bfaa"/>
+    </linearGradient>
+  </defs>
+  <rect width="88" height="88" rx="28" fill="url(#mark)"/>
+  <text x="44" y="56" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" text-anchor="middle">TY</text>
+  <text x="116" y="57" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800" letter-spacing="-1">TO YOU</text>
+</svg>
