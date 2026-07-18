@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
   Check,
@@ -8,11 +8,13 @@ import {
   MapPin,
   PackageCheck,
   Phone,
+  Search,
   ShieldCheck,
   UserRound,
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
 import { updateServerProfile } from '../accountApi'
+import { openKoreanAddressSearch } from '../addressSearch'
 import { loadCustomerProfile, saveCustomerProfile, type CustomerProfile } from '../customerProfile'
 import { SITE_BRAND } from '../siteBrand'
 
@@ -72,6 +74,7 @@ function ProfileEditor({ authSession, onGoHome, onSave, onLogout }: Omit<Profile
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const addressDetailRef = useRef<HTMLInputElement>(null)
   const isSocialAccount = authSession.provider !== 'email'
   const initials = useMemo(() => (profile.name.trim() || authSession.displayName).slice(0, 2), [authSession.displayName, profile.name])
   const joinedDate = useMemo(
@@ -83,6 +86,23 @@ function ProfileEditor({ authSession, onGoHome, onSave, onLogout }: Omit<Profile
     setProfile((current) => ({ ...current, [key]: value }))
     setError('')
     setSaved(false)
+  }
+
+  async function handleAddressSearch() {
+    try {
+      const selectedAddress = await openKoreanAddressSearch()
+      if (!selectedAddress) return
+      setProfile((current) => ({
+        ...current,
+        postalCode: selectedAddress.postalCode,
+        addressLine1: selectedAddress.address,
+      }))
+      setError('')
+      setSaved(false)
+      window.requestAnimationFrame(() => addressDetailRef.current?.focus())
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : '주소 검색을 시작하지 못했습니다.')
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -181,9 +201,12 @@ function ProfileEditor({ authSession, onGoHome, onSave, onLogout }: Omit<Profile
             <section className="profile-form-section">
               <div className="profile-form-section__title"><MapPin size={18} /><div><h3>기본 배송지</h3><p>결제 시 자동으로 불러올 주소입니다.</p></div></div>
               <div className="profile-field-grid">
-                <label className="profile-field-grid__postal"><span>우편번호</span><input value={profile.postalCode} onChange={(event) => updateProfile('postalCode', event.target.value)} autoComplete="postal-code" inputMode="numeric" placeholder="06236" /></label>
-                <label className="profile-field-grid__wide"><span>기본 주소</span><input value={profile.addressLine1} onChange={(event) => updateProfile('addressLine1', event.target.value)} autoComplete="street-address" placeholder="서울시 강남구 테헤란로" /></label>
-                <label className="profile-field-grid__wide"><span>상세 주소</span><input value={profile.addressLine2} onChange={(event) => updateProfile('addressLine2', event.target.value)} autoComplete="address-line2" placeholder="동·호수 등 상세 주소" /></label>
+                <div className="profile-address-search profile-field-grid__wide">
+                  <label className="profile-field-grid__postal"><span>우편번호</span><input readOnly value={profile.postalCode} autoComplete="postal-code" inputMode="numeric" placeholder="06236" /></label>
+                  <button type="button" disabled={saving} onClick={handleAddressSearch}><Search size={16} /> 주소 검색</button>
+                </div>
+                <label className="profile-field-grid__wide"><span>기본 주소</span><input readOnly value={profile.addressLine1} autoComplete="street-address" placeholder="주소 검색 버튼을 눌러주세요" /></label>
+                <label className="profile-field-grid__wide"><span>상세 주소</span><input ref={addressDetailRef} value={profile.addressLine2} onChange={(event) => updateProfile('addressLine2', event.target.value)} autoComplete="address-line2" placeholder="동·호수 등 상세 주소" /></label>
               </div>
             </section>
 

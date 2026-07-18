@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
   Check,
@@ -7,6 +7,7 @@ import {
   LockKeyhole,
   MapPin,
   MessageSquareText,
+  Search,
   ShieldCheck,
   Smartphone,
   Truck,
@@ -24,6 +25,7 @@ import { currencyFormatter } from '../data'
 import { SITE_BRAND } from '../siteBrand'
 import type { AuthSession } from '../authSession'
 import { updateServerProfile } from '../accountApi'
+import { openKoreanAddressSearch } from '../addressSearch'
 
 interface CheckoutPageProps {
   product?: CatalogProduct
@@ -62,6 +64,7 @@ export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreat
   const [error, setError] = useState('')
   const [complete, setComplete] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const addressDetailRef = useRef<HTMLInputElement>(null)
   const selection = useMemo(() => getCheckoutSelection(product), [product])
 
   if (!product) {
@@ -87,6 +90,22 @@ export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreat
     if (profile.phone.replace(/\D/g, '').length < 9) return '연락 가능한 휴대폰 번호를 입력해 주세요.'
     if (profile.postalCode.trim().length < 3 || profile.addressLine1.trim().length < 5) return '배송 주소를 모두 입력해 주세요.'
     return ''
+  }
+
+  async function handleAddressSearch() {
+    try {
+      const selectedAddress = await openKoreanAddressSearch()
+      if (!selectedAddress) return
+      setProfile((current) => ({
+        ...current,
+        postalCode: selectedAddress.postalCode,
+        addressLine1: selectedAddress.address,
+      }))
+      setError('')
+      window.requestAnimationFrame(() => addressDetailRef.current?.focus())
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : '주소 검색을 시작하지 못했습니다.')
+    }
   }
 
   async function persistDeliveryProfile() {
@@ -236,9 +255,12 @@ export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreat
                     <label><span>받는 분</span><input value={profile.name} onChange={(event) => updateProfile('name', event.target.value)} autoComplete="name" placeholder="이름" /></label>
                     <label><span>휴대폰 번호</span><input value={profile.phone} onChange={(event) => updateProfile('phone', event.target.value)} autoComplete="tel" inputMode="tel" placeholder="010-1234-5678" /></label>
                   </div>
-                  <label className="checkout-postal"><span>우편번호</span><input value={profile.postalCode} onChange={(event) => updateProfile('postalCode', event.target.value)} autoComplete="postal-code" inputMode="numeric" placeholder="우편번호" /></label>
-                  <label><span>기본 주소</span><input value={profile.addressLine1} onChange={(event) => updateProfile('addressLine1', event.target.value)} autoComplete="street-address" placeholder="도로명 주소" /></label>
-                  <label><span>상세 주소</span><input value={profile.addressLine2} onChange={(event) => updateProfile('addressLine2', event.target.value)} autoComplete="address-line2" placeholder="동·호수 등 상세 주소" /></label>
+                  <div className="checkout-address-search">
+                    <label className="checkout-postal"><span>우편번호</span><input readOnly value={profile.postalCode} autoComplete="postal-code" inputMode="numeric" placeholder="우편번호" /></label>
+                    <button type="button" disabled={submitting} onClick={handleAddressSearch}><Search size={16} /> 주소 검색</button>
+                  </div>
+                  <label><span>기본 주소</span><input readOnly value={profile.addressLine1} autoComplete="street-address" placeholder="주소 검색 버튼을 눌러주세요" /></label>
+                  <label><span>상세 주소</span><input ref={addressDetailRef} value={profile.addressLine2} onChange={(event) => updateProfile('addressLine2', event.target.value)} autoComplete="address-line2" placeholder="동·호수 등 상세 주소" /></label>
                   <button type="button" disabled={submitting} className="checkout-save-address" onClick={saveDeliveryAddress}>{submitting ? '저장 중…' : '이 배송지 사용하기'}</button>
                 </div>
               ) : (

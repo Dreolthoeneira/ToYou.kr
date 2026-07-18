@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,11 +8,13 @@ import {
   LockKeyhole,
   MapPin,
   PackageCheck,
+  Search,
   ShieldCheck,
   ShoppingBag,
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
 import { loginWithEmail, loginWithSocial, signupWithEmail } from '../accountApi'
+import { openKoreanAddressSearch } from '../addressSearch'
 import { LegalDocumentModal, type LegalDocumentType } from '../components/LegalDocumentModal'
 import { saveCustomerProfile } from '../customerProfile'
 import { useI18n } from '../i18n'
@@ -186,6 +188,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   const [socialProvider, setSocialProvider] = useState<'Kakao' | 'Naver' | null>(null)
   const [legalDocument, setLegalDocument] = useState<LegalDocumentType | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const addressDetailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setStep(0)
@@ -229,6 +232,19 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
 
   function validatePhone() {
     return phone.replace(/\D/g, '').length >= 9
+  }
+
+  async function handleAddressSearch() {
+    try {
+      const selectedAddress = await openKoreanAddressSearch()
+      if (!selectedAddress) return
+      setPostalCode(selectedAddress.postalCode)
+      setAddressLine1(selectedAddress.address)
+      setError('')
+      window.requestAnimationFrame(() => addressDetailRef.current?.focus())
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : '주소 검색을 시작하지 못했습니다.')
+    }
   }
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
@@ -447,10 +463,13 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
                   ) : null}
                   {step === 1 ? (
                     <div className="toss-auth-field-grid toss-auth-field-grid--address">
-                      <label className="toss-auth-field-grid__postal"><span>{signupFields.postalCode}</span><input autoFocus type="text" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} placeholder={signupFields.postalCodePlaceholder} autoComplete="postal-code" inputMode="numeric" /></label>
-                      <label className="toss-auth-field-grid__wide"><span>{signupFields.addressLine1}</span><input type="text" value={addressLine1} onChange={(event) => setAddressLine1(event.target.value)} placeholder={signupFields.addressLine1Placeholder} autoComplete="street-address" /></label>
-                      <label className="toss-auth-field-grid__wide"><span>{signupFields.addressLine2}</span><input type="text" value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} placeholder={signupFields.addressLine2Placeholder} autoComplete="address-line2" /></label>
-                      <p className="toss-auth-address-note"><MapPin size={15} /> {locale === 'ko' ? '입력한 주소는 기본 배송지로 안전하게 저장돼요.' : 'This will be saved as your default delivery address.'}</p>
+                      <div className="toss-auth-address-search toss-auth-field-grid__wide">
+                        <label className="toss-auth-field-grid__postal"><span>{signupFields.postalCode}</span><input readOnly type="text" value={postalCode} placeholder={signupFields.postalCodePlaceholder} autoComplete="postal-code" inputMode="numeric" /></label>
+                        <button autoFocus type="button" disabled={submitting} onClick={handleAddressSearch}><Search size={16} /> {locale === 'ko' ? '주소 검색' : 'Search address'}</button>
+                      </div>
+                      <label className="toss-auth-field-grid__wide"><span>{signupFields.addressLine1}</span><input readOnly type="text" value={addressLine1} placeholder={signupFields.addressLine1Placeholder} autoComplete="street-address" /></label>
+                      <label className="toss-auth-field-grid__wide"><span>{signupFields.addressLine2}</span><input ref={addressDetailRef} type="text" value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} placeholder={signupFields.addressLine2Placeholder} autoComplete="address-line2" /></label>
+                      <p className="toss-auth-address-note"><MapPin size={15} /> {locale === 'ko' ? '주소 검색 후 상세 주소만 입력해 주세요.' : 'Search for an address, then add the apartment or unit.'}</p>
                     </div>
                   ) : null}
                   {step === 2 ? (

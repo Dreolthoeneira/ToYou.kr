@@ -14904,6 +14904,100 @@ body {
   }
 }
 
+/* Shared Korean postcode search controls */
+.toss-auth-address-search,
+.checkout-address-search,
+.profile-address-search {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.toss-auth-address-search > label,
+.checkout-address-search > label,
+.profile-address-search > label {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.toss-auth-address-search > button,
+.checkout-address-search > button,
+.profile-address-search > button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 19px;
+  border: 1px solid #d2c8bf;
+  border-radius: 9px;
+  background: #2c2824;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.toss-auth-address-search > button:hover,
+.checkout-address-search > button:hover,
+.profile-address-search > button:hover {
+  background: #473d36;
+  box-shadow: 0 8px 18px rgba(44, 34, 28, 0.13);
+  transform: translateY(-1px);
+}
+
+.toss-auth-address-search > button:focus-visible,
+.checkout-address-search > button:focus-visible,
+.profile-address-search > button:focus-visible {
+  outline: 3px solid rgba(199, 91, 66, 0.2);
+  outline-offset: 2px;
+}
+
+.toss-auth-address-search > button:disabled,
+.checkout-address-search > button:disabled,
+.profile-address-search > button:disabled {
+  cursor: wait;
+  opacity: 0.56;
+  transform: none;
+}
+
+.toss-auth-address-search input[readonly],
+.toss-auth-field-grid input[readonly],
+.checkout-address-form input[readonly],
+.profile-field-grid input[readonly] {
+  background: #f1ede7;
+  color: #514942;
+  cursor: default;
+}
+
+.checkout-address-search > button {
+  min-height: 50px;
+  border-radius: 10px;
+}
+
+.profile-address-search > button {
+  min-height: 52px;
+  border-radius: 0;
+}
+
+@media (max-width: 480px) {
+  .toss-auth-address-search,
+  .checkout-address-search,
+  .profile-address-search {
+    grid-template-columns: minmax(0, 1fr) minmax(118px, auto);
+  }
+
+  .toss-auth-address-search > button,
+  .checkout-address-search > button,
+  .profile-address-search > button {
+    padding: 0 14px;
+  }
+}
+
 /* ========================================================================== */
 /* TO YOU owned-store system                                                   */
 /* Independent from the link-import concierge experience.                      */
