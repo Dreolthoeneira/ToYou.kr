@@ -30,6 +30,15 @@ otp_expiry = 3600
 subject = "[TO YOU] 이메일 인증을 완료해 주세요"
 content_path = "./supabase/templates/confirmation.html"
 
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 587
+user = "resend"
+pass = "env(RESEND_SMTP_PASSWORD)"
+admin_email = "no-reply@toyou.kr"
+sender_name = "TO YOU"
+
 [auth.mfa]
 max_enrolled_factors = 10
 
