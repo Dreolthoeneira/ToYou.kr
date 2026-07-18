@@ -10,6 +10,7 @@ export type AppRoute =
   | { page: 'login' }
   | { page: 'signup' }
   | { page: 'profile' }
+  | { page: 'orders' }
   | { page: 'posts' }
   | { page: 'post'; postId: string }
 
@@ -56,6 +57,10 @@ export function parseRoute(pathname: string): AppRoute {
 
   if (normalized === '/account/profile') {
     return { page: 'profile' }
+  }
+
+  if (normalized === '/account/orders') {
+    return { page: 'orders' }
   }
 
   if (normalized === '/cart') {
@@ -122,6 +127,10 @@ export function getCheckoutPath(productId: string, quantity: number, option: str
 
 export function getCartPath() {
   return '/cart'
+}
+
+export function getOrdersPath() {
+  return '/account/orders'
 }
 
 export function getImportedProductPath(productId: string) {

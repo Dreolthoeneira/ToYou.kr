@@ -99,6 +99,15 @@ test('TO YOU store data API', async (t) => {
     assert.equal(storefront.payload.snapshot.importedProducts[0].id, 'imported-seed')
   })
 
+  await t.test('anonymous checkout is rejected before an order is created', async () => {
+    const result = await request('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify({ order: { productId: seedProduct.id, option: 'Black', quantity: 1, customerName: '비회원', phone: '010-1234-5678', address: '[06236] 서울시 강남구', paymentMethod: 'card' } }),
+    })
+    assert.equal(result.response.status, 401)
+    assert.equal(result.payload.error, '로그인이 필요합니다.')
+  })
+
   await t.test('admin data is protected and available after admin login', async () => {
     const blocked = await request('/api/admin/snapshot')
     assert.equal(blocked.response.status, 401)
@@ -143,6 +152,11 @@ test('TO YOU store data API', async (t) => {
     assert.equal(orderResult.response.status, 201)
     assert.equal(orderResult.payload.order.total, 25_000)
     assert.equal(orderResult.payload.product.stock, 4)
+
+    const memberOrders = await request('/api/account/orders')
+    assert.equal(memberOrders.response.status, 200)
+    assert.equal(memberOrders.payload.orders.length, 1)
+    assert.equal(memberOrders.payload.orders[0].id, orderResult.payload.order.id)
 
     const statusResult = await request(`/api/admin/orders/${encodeURIComponent(orderResult.payload.order.id)}/status`, {
       method: 'PATCH',

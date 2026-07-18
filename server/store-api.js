@@ -443,6 +443,7 @@ async function bootstrapStore(req) {
 }
 
 async function createOrder(req) {
+  const account = requireMember(req)
   const body = await readJsonBody(req)
   const input = body.order ?? body
   const productId = text(input.productId, 160)
@@ -468,7 +469,6 @@ async function createOrder(req) {
   const total = subtotal + (subtotal >= 70_000 ? 0 : 3_000)
   const id = `ord-${randomUUID()}`
   const createdAt = new Date().toISOString()
-  const account = getAccountByRequest(req)
   const nextStock = product.stock - quantity
 
   db.exec('BEGIN IMMEDIATE')
@@ -477,7 +477,7 @@ async function createOrder(req) {
       id, user_id, product_id, product_name, option_name, quantity, total, customer_name,
       phone, address, payment_method, delivery_note, status, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?)`)
-      .run(id, account?.id ?? null, product.id, product.name, option, quantity, total, customerName, phone, address,
+      .run(id, account.id, product.id, product.name, option, quantity, total, customerName, phone, address,
         paymentMethod, text(input.deliveryNote, 1000), createdAt)
     db.prepare("UPDATE products SET stock = ?, status = CASE WHEN ? = 0 THEN 'soldout' ELSE status END, updated_at = ? WHERE id = ?")
       .run(nextStock, nextStock, createdAt, product.id)
@@ -531,6 +531,13 @@ export function createStoreApiMiddleware() {
       if (pathname === '/api/account/activity' && req.method === 'GET') {
         const account = requireMember(req)
         sendJson(res, 200, { activity: getAccountActivity(account.id) })
+        return
+      }
+
+      if (pathname === '/api/account/orders' && req.method === 'GET') {
+        const account = requireMember(req)
+        const orders = getDatabase().prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(account.id).map(orderFromRow)
+        sendJson(res, 200, { orders })
         return
       }
 

@@ -257,10 +257,22 @@ export async function deleteSupabasePost(postId: string) {
 }
 
 export async function createSupabaseOrder(order: AdminOrder) {
+  await requireUserId()
   const { data, error } = await requireSupabase().rpc('create_store_order', { p_order: order })
   if (error) fail(error, '주문을 생성하지 못했습니다.')
   const payload = data as { order: Row; product: Row }
   return { order: orderFromRow(payload.order), product: productFromRow(payload.product) }
+}
+
+export async function loadSupabaseAccountOrders(): Promise<AdminOrder[]> {
+  const userId = await requireUserId()
+  const { data, error } = await requireSupabase()
+    .from('orders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) fail(error, '주문과 배송 정보를 불러오지 못했습니다.')
+  return (data as Row[]).map(orderFromRow)
 }
 
 export async function updateSupabaseOrderStatus(orderId: string, status: AdminOrderStatus) {

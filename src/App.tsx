@@ -12,6 +12,7 @@ import { ProductDetailPage } from './pages/ProductDetailPage'
 import { PostsPage } from './pages/PostsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { CartPage } from './pages/CartPage'
+import { OrdersPage } from './pages/OrdersPage'
 import { loadCatalog, type CatalogProduct } from './catalog'
 import {
   loadAdminOrders,
@@ -25,7 +26,7 @@ import {
   type StoreSettings,
 } from './adminData'
 import { detectNavigatorLocale, getLocaleOption, useI18n, type Locale } from './i18n'
-import { getAppPathname, getBrowserPath, getCartPath, getCheckoutPath, getCollectionPath, getImportedProductPath, getPostPath, getPostsPath, getProductPath, parseRoute } from './router'
+import { getAppPathname, getBrowserPath, getCartPath, getCheckoutPath, getCollectionPath, getImportedProductPath, getOrdersPath, getPostPath, getPostsPath, getProductPath, parseRoute } from './router'
 import type { AuthSession } from './authSession'
 import { loadServerAccount, logoutServerAccount } from './accountApi'
 import { clearCustomerProfile, saveCustomerProfile } from './customerProfile'
@@ -56,6 +57,7 @@ import {
 } from './storeApi'
 
 const LOCALE_SUGGESTION_HANDLED_KEY = 'toyou-locale-suggestion-handled'
+const PENDING_AUTH_PATH_KEY = 'toyou-pending-auth-path'
 const EMPTY_ACCOUNT_ACTIVITY: AccountActivity = { cartCount: 0, wishlistProductIds: [], restockProductIds: [] }
 
 const COUNTRY_LOCALE_GROUPS: Array<{ locale: Locale; countries: string[] }> = [
@@ -135,6 +137,8 @@ export default function App() {
           saveCustomerProfile(account.profile)
           setAuthSession(account.session)
           setAccountActivity(await loadAccountActivity())
+          const pendingPath = consumePendingAuthPath()
+          if (pendingPath) navigate(pendingPath)
         } else {
           clearCustomerProfile()
           setAuthSession(null)
@@ -238,11 +242,39 @@ export default function App() {
   }
 
   function openCheckout(productId: string, quantity: number, option: string) {
-    navigate(getCheckoutPath(productId, quantity, option))
+    const checkoutPath = getCheckoutPath(productId, quantity, option)
+    if (!authSession) {
+      beginLogin(checkoutPath)
+      return
+    }
+    navigate(checkoutPath)
   }
 
   function openCartCheckout(productId: string, quantity: number, option: string) {
-    navigate(`${getCheckoutPath(productId, quantity, option)}&source=cart`)
+    const checkoutPath = `${getCheckoutPath(productId, quantity, option)}&source=cart`
+    if (!authSession) {
+      beginLogin(checkoutPath)
+      return
+    }
+    navigate(checkoutPath)
+  }
+
+  function consumePendingAuthPath() {
+    const pendingPath = window.sessionStorage.getItem(PENDING_AUTH_PATH_KEY)
+    window.sessionStorage.removeItem(PENDING_AUTH_PATH_KEY)
+    return pendingPath?.startsWith('/') && !pendingPath.startsWith('//') ? pendingPath : null
+  }
+
+  function beginLogin(returnPath?: string) {
+    if (returnPath?.startsWith('/') && !returnPath.startsWith('//')) {
+      window.sessionStorage.setItem(PENDING_AUTH_PATH_KEY, returnPath)
+    }
+    navigate('/login')
+  }
+
+  function leaveAuth() {
+    window.sessionStorage.removeItem(PENDING_AUTH_PATH_KEY)
+    navigate('/')
   }
 
   function applyStoreSnapshot(snapshot: StorefrontSnapshot | AdminSnapshot) {
@@ -263,6 +295,8 @@ export default function App() {
     setAuthSession(session)
     void refreshStoreData(session.role).catch(() => undefined)
     void loadAccountActivity().then(setAccountActivity).catch(() => setAccountActivity(EMPTY_ACCOUNT_ACTIVITY))
+    const pendingPath = consumePendingAuthPath()
+    if (pendingPath) navigate(pendingPath)
   }
 
   async function logout() {
@@ -345,6 +379,7 @@ export default function App() {
   }
 
   async function createOrder(order: AdminOrder) {
+    if (!authSession) throw new Error('로그인 후 주문할 수 있습니다.')
     const result = await createServerOrder(order)
     setOrders((current) => [result.order, ...current])
     setCatalog((current) => current.map((product) => product.id === result.product.id ? result.product : product))
@@ -446,7 +481,7 @@ export default function App() {
               authSession={authSession}
               cartCount={accountActivity.cartCount}
               onGoHome={() => navigate('/')}
-              onGoToLogin={() => navigate('/login')}
+              onGoToLogin={() => beginLogin(getCartPath())}
               onOpenProduct={openProduct}
               onCheckout={openCartCheckout}
               onCartActivityChange={setAccountActivity}
@@ -457,14 +492,26 @@ export default function App() {
               authSession={authSession}
               onGoBack={() => navigate(getProductPath(route.productId))}
               onGoHome={() => navigate('/')}
+              onGoToLogin={() => beginLogin(`${getAppPathname(window.location.pathname)}${window.location.search}`)}
+              onGoToOrders={() => navigate(getOrdersPath())}
               onCreateOrder={createOrder}
               onProfileUpdated={updateAuthProfile}
+            />
+          ) : route.page === 'orders' ? (
+            <OrdersPage
+              authSession={authSession}
+              products={catalog}
+              onGoHome={() => navigate('/')}
+              onGoToLogin={() => beginLogin(getOrdersPath())}
+              onGoToProfile={() => navigate('/account/profile')}
+              onOpenProduct={openProduct}
             />
           ) : route.page === 'profile' ? (
             <ProfilePage
               authSession={authSession}
               onGoHome={() => navigate('/')}
-              onGoToLogin={() => navigate('/login')}
+              onGoToLogin={() => beginLogin('/account/profile')}
+              onGoToOrders={() => navigate(getOrdersPath())}
               onSave={updateAuthProfile}
               onLogout={logout}
             />
@@ -549,9 +596,9 @@ export default function App() {
               }}
             />
           ) : route.page === 'login' ? (
-            <AuthPage mode="login" onGoHome={() => navigate('/')} onSwitchMode={() => navigate('/signup')} onAuthComplete={completeAuth} />
+            <AuthPage mode="login" onGoHome={leaveAuth} onSwitchMode={() => navigate('/signup')} onAuthComplete={completeAuth} />
           ) : route.page === 'signup' ? (
-            <AuthPage mode="signup" onGoHome={() => navigate('/')} onSwitchMode={() => navigate('/login')} onAuthComplete={completeAuth} />
+            <AuthPage mode="signup" onGoHome={leaveAuth} onSwitchMode={() => navigate('/login')} onAuthComplete={completeAuth} />
           ) : route.page === 'import' ? (
             <HomePage
               onOpenProduct={openImportedProduct}

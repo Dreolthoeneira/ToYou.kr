@@ -22,6 +22,7 @@ interface ProfilePageProps {
   authSession: AuthSession | null
   onGoHome: () => void
   onGoToLogin: () => void
+  onGoToOrders: () => void
   onSave: (session: AuthSession) => void
   onLogout: () => void
 }
@@ -50,7 +51,7 @@ function getInitialProfile(session: AuthSession): CustomerProfile {
   }
 }
 
-export function ProfilePage({ authSession, onGoHome, onGoToLogin, onSave, onLogout }: ProfilePageProps) {
+export function ProfilePage({ authSession, onGoHome, onGoToLogin, onGoToOrders, onSave, onLogout }: ProfilePageProps) {
   if (!authSession) {
     return (
       <main className="profile-page profile-page--signed-out">
@@ -66,10 +67,10 @@ export function ProfilePage({ authSession, onGoHome, onGoToLogin, onSave, onLogo
     )
   }
 
-  return <ProfileEditor authSession={authSession} onGoHome={onGoHome} onSave={onSave} onLogout={onLogout} />
+  return <ProfileEditor authSession={authSession} onGoHome={onGoHome} onGoToOrders={onGoToOrders} onSave={onSave} onLogout={onLogout} />
 }
 
-function ProfileEditor({ authSession, onGoHome, onSave, onLogout }: Omit<ProfilePageProps, 'authSession' | 'onGoToLogin'> & { authSession: AuthSession }) {
+function ProfileEditor({ authSession, onGoHome, onGoToOrders, onSave, onLogout }: Omit<ProfilePageProps, 'authSession' | 'onGoToLogin'> & { authSession: AuthSession }) {
   const [profile, setProfile] = useState<CustomerProfile>(() => getInitialProfile(authSession))
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -167,6 +168,10 @@ function ProfileEditor({ authSession, onGoHome, onSave, onLogout }: Omit<Profile
           <h1>{profile.name || authSession.displayName}<small>님</small></h1>
           <p>{profile.email || '이메일을 등록해 주세요'}</p>
           <div className="profile-summary__status"><i /> 로그인 중</div>
+
+          <button type="button" className="profile-summary__orders" onClick={onGoToOrders}>
+            <PackageCheck size={18} /><span><strong>주문·배송 조회</strong><small>현재 배송 상태 확인</small></span><ChevronRight size={16} />
+          </button>
 
           <dl>
             <div><dt>회원 등급</dt><dd>TO YOU MEMBER</dd></div>

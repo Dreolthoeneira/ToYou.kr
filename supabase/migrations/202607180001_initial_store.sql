@@ -265,6 +265,7 @@ declare
   selected_option text;
   subtotal integer;
 begin
+  if requesting_user is null then raise exception '로그인이 필요합니다.'; end if;
   requested_quantity := greatest(1, least(99, coalesce((order_data ->> 'quantity')::integer, 1)));
   selected_option := left(trim(coalesce(order_data ->> 'option', '')), 200);
 
@@ -323,6 +324,9 @@ language sql
 security invoker
 set search_path = ''
 as $$ select private.create_store_order((select auth.uid()), p_order) $$;
+
+revoke execute on function public.create_store_order(jsonb) from anon;
+grant execute on function public.create_store_order(jsonb) to authenticated;
 
 create or replace function private.update_store_order_status(requesting_user uuid, requested_order_id text, requested_status text)
 returns jsonb
@@ -485,11 +489,11 @@ revoke all on function private.add_cart_items(uuid, jsonb) from public;
 revoke all on function private.is_admin(uuid) from public;
 
 grant execute on function public.update_my_profile(jsonb) to authenticated;
-grant execute on function public.create_store_order(jsonb) to anon, authenticated;
+grant execute on function public.create_store_order(jsonb) to authenticated;
 grant execute on function public.update_store_order_status(text, text) to authenticated;
 grant execute on function public.add_cart_items(jsonb) to authenticated;
 grant execute on function private.update_my_profile(uuid, jsonb) to authenticated;
-grant execute on function private.create_store_order(uuid, jsonb) to anon, authenticated;
+grant execute on function private.create_store_order(uuid, jsonb) to authenticated;
 grant execute on function private.update_store_order_status(uuid, text, text) to authenticated;
 grant execute on function private.add_cart_items(uuid, jsonb) to authenticated;
 grant execute on function private.is_admin(uuid) to anon, authenticated;

@@ -32,6 +32,8 @@ interface CheckoutPageProps {
   authSession: AuthSession | null
   onGoBack: () => void
   onGoHome: () => void
+  onGoToLogin: () => void
+  onGoToOrders: () => void
   onCreateOrder: (order: AdminOrder) => Promise<AdminOrder>
   onProfileUpdated: (session: AuthSession) => void
 }
@@ -55,7 +57,7 @@ function getCheckoutSelection(product?: CatalogProduct) {
   return { quantity, option }
 }
 
-export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreateOrder, onProfileUpdated }: CheckoutPageProps) {
+export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onGoToLogin, onGoToOrders, onCreateOrder, onProfileUpdated }: CheckoutPageProps) {
   const [profile, setProfile] = useState<CustomerProfile>(loadCustomerProfile)
   const [editingAddress, setEditingAddress] = useState(() => !hasCompleteDeliveryProfile(loadCustomerProfile()))
   const [deliveryNote, setDeliveryNote] = useState('문 앞에 놓아주세요')
@@ -66,6 +68,27 @@ export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreat
   const [submitting, setSubmitting] = useState(false)
   const addressDetailRef = useRef<HTMLInputElement>(null)
   const selection = useMemo(() => getCheckoutSelection(product), [product])
+
+  if (!authSession) {
+    return (
+      <div className="checkout-auth-page">
+        <header className="checkout-header">
+          <button type="button" className="checkout-header__back" onClick={onGoBack}><ArrowLeft size={17} /> 상품으로</button>
+          <button type="button" className="checkout-header__brand" onClick={onGoHome}>{SITE_BRAND.toUpperCase()}</button>
+          <span><LockKeyhole size={15} /> 회원 전용 결제</span>
+        </header>
+        <main className="checkout-auth-gate">
+          <span className="checkout-auth-gate__icon"><LockKeyhole size={27} /></span>
+          <small>MEMBER CHECKOUT</small>
+          <h1>로그인 후<br />구매할 수 있어요</h1>
+          <p>주문과 배송 내역을 안전하게 보관하기 위해<br />회원 계정으로 로그인이 필요합니다.</p>
+          {product ? <div className="checkout-auth-gate__product"><ProductArtwork art={product.art} palette={product.palette} accent={product.accent} imageUrl={product.imageUrl} name={product.name} /><div><small>구매 예정 상품</small><strong>{product.name}</strong><span>{selection.option || '기본 옵션'} · {selection.quantity}개</span></div></div> : null}
+          <button type="button" className="checkout-primary" onClick={onGoToLogin}>로그인하고 계속하기 <ChevronRight size={17} /></button>
+          <button type="button" className="checkout-auth-gate__back" onClick={onGoBack}>상품으로 돌아가기</button>
+        </main>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -142,6 +165,11 @@ export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreat
 
   async function handlePayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!authSession) {
+      setError('로그인 후 주문할 수 있습니다.')
+      onGoToLogin()
+      return
+    }
     const profileError = validateProfile()
     if (profileError) {
       setError(profileError)
@@ -206,7 +234,10 @@ export function CheckoutPage({ product, authSession, onGoBack, onGoHome, onCreat
             <div><small>주문 상품</small><strong>{product.name}</strong><span>{selection.option || '기본 옵션'} · {selection.quantity}개</span></div>
             <b>{currencyFormatter.format(total)}</b>
           </div>
-          <button type="button" className="checkout-primary" onClick={onGoHome}>쇼핑 계속하기 <ChevronRight size={17} /></button>
+          <div className="checkout-complete__actions">
+            <button type="button" className="checkout-primary" onClick={onGoToOrders}>주문·배송 조회 <Truck size={17} /></button>
+            <button type="button" onClick={onGoHome}>쇼핑 계속하기 <ChevronRight size={17} /></button>
+          </div>
         </main>
       </div>
     )

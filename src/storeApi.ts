@@ -10,6 +10,7 @@ import {
   deleteSupabaseProduct,
   deleteSupabaseReview,
   loadSupabaseAccountActivity,
+  loadSupabaseAccountOrders,
   loadSupabaseCart,
   loadSupabaseAdminSnapshot,
   loadSupabaseStorefrontSnapshot,
@@ -143,6 +144,12 @@ export async function createServerOrder(order: AdminOrder) {
     method: 'POST',
     body: JSON.stringify({ order }),
   })
+}
+
+export async function loadServerOrders() {
+  if (isSupabaseConfigured) return loadSupabaseAccountOrders()
+  const result = await request<{ orders: AdminOrder[] }>('/api/account/orders')
+  return result.orders
 }
 
 export async function updateServerOrderStatus(orderId: string, status: AdminOrderStatus) {
