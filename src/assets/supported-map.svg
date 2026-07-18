@@ -1,0 +1,63 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="url(#ocean)" />
+  <path d="M108 184C151 138 206 128 250 147C278 159 295 184 321 194C361 210 414 193 455 219C500 248 513 311 487 351C468 380 430 399 391 408C341 419 286 418 243 390C192 356 139 317 118 260C109 237 100 205 108 184Z" fill="#E3F2FD" fill-opacity="0.94"/>
+  <path d="M470 168C514 151 571 153 616 173C657 191 690 223 720 255C744 281 759 315 755 349C750 394 719 435 677 454C623 478 558 463 505 437C466 418 434 390 424 352C411 303 421 211 470 168Z" fill="#EAF7E7" fill-opacity="0.96"/>
+  <path d="M766 184C807 154 870 150 922 164C972 178 1011 215 1029 258C1048 304 1047 358 1021 400C993 445 945 480 892 492C842 503 789 494 754 458C713 418 696 362 703 310C709 262 729 218 766 184Z" fill="#F8F3E8" fill-opacity="0.98"/>
+  <path d="M890 512C924 492 967 490 1001 509C1034 527 1055 563 1051 601C1048 632 1027 660 998 675C963 694 919 697 886 678C852 658 829 620 834 582C838 553 860 529 890 512Z" fill="#FFF1E3" fill-opacity="0.98"/>
+  <path d="M266 481C288 463 320 456 347 464C371 471 387 488 396 511C405 533 404 560 391 580C376 602 351 615 325 621C299 626 270 623 247 609C222 593 204 567 205 539C206 516 224 496 244 485L266 481Z" fill="#EFFAF6" fill-opacity="0.96"/>
+  <g opacity="0.22" stroke="white">
+    <path d="M120 135H1080"/>
+    <path d="M120 255H1080"/>
+    <path d="M120 375H1080"/>
+    <path d="M120 495H1080"/>
+    <path d="M120 615H1080"/>
+    <path d="M180 100V620"/>
+    <path d="M360 100V620"/>
+    <path d="M540 100V620"/>
+    <path d="M720 100V620"/>
+    <path d="M900 100V620"/>
+  </g>
+  <g>
+    <circle cx="252" cy="258" r="14" fill="#0071E3"/>
+    <circle cx="252" cy="258" r="26" fill="#0071E3" fill-opacity="0.14"/>
+    <rect x="275" y="228" width="118" height="54" rx="18" fill="white" fill-opacity="0.96"/>
+    <text x="295" y="262" fill="#1D1D1F" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">US</text>
+  </g>
+  <g>
+    <circle cx="648" cy="240" r="14" fill="#0071E3"/>
+    <circle cx="648" cy="240" r="26" fill="#0071E3" fill-opacity="0.14"/>
+    <rect x="671" y="210" width="112" height="54" rx="18" fill="white" fill-opacity="0.96"/>
+    <text x="691" y="244" fill="#1D1D1F" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">DE</text>
+  </g>
+  <g>
+    <circle cx="892" cy="275" r="14" fill="#0071E3"/>
+    <circle cx="892" cy="275" r="26" fill="#0071E3" fill-opacity="0.14"/>
+    <rect x="915" y="245" width="106" height="54" rx="18" fill="white" fill-opacity="0.96"/>
+    <text x="935" y="279" fill="#1D1D1F" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">JP</text>
+  </g>
+  <g>
+    <circle cx="861" cy="410" r="14" fill="#1AA96B"/>
+    <circle cx="861" cy="410" r="26" fill="#1AA96B" fill-opacity="0.16"/>
+    <rect x="884" y="380" width="110" height="54" rx="18" fill="white" fill-opacity="0.96"/>
+    <text x="904" y="414" fill="#1D1D1F" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">VN</text>
+  </g>
+  <g>
+    <circle cx="904" cy="444" r="14" fill="#1AA96B"/>
+    <circle cx="904" cy="444" r="26" fill="#1AA96B" fill-opacity="0.16"/>
+    <rect x="927" y="414" width="110" height="54" rx="18" fill="white" fill-opacity="0.96"/>
+    <text x="947" y="448" fill="#1D1D1F" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">SG</text>
+  </g>
+  <g>
+    <circle cx="972" cy="594" r="14" fill="#F57C00"/>
+    <circle cx="972" cy="594" r="26" fill="#F57C00" fill-opacity="0.18"/>
+    <rect x="995" y="564" width="112" height="54" rx="18" fill="white" fill-opacity="0.96"/>
+    <text x="1015" y="598" fill="#1D1D1F" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">AU</text>
+  </g>
+  <defs>
+    <linearGradient id="ocean" x1="86" y1="60" x2="1111" y2="659" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CFE8FF"/>
+      <stop offset="0.52" stop-color="#DDEFFB"/>
+      <stop offset="1" stop-color="#ECF6FF"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,0 +1,16 @@
+node_modules
+dist
+*.tsbuildinfo
+data/*.sqlite*
+.env
+.env.local
+.env.*.local
+.supabase
+.vs
+.agents
+.codex-temp
+*.log
+tmp-*.png
+qa-*.png
+kream-product.png
+/O
