@@ -344,6 +344,31 @@ function getAccountActivity(userId) {
   }
 }
 
+function getCartSnapshot(userId) {
+  const db = getDatabase()
+  const rows = db.prepare(`
+    SELECT
+      cart_items.product_id AS cart_product_id,
+      cart_items.option_name AS cart_option_name,
+      cart_items.quantity AS cart_quantity,
+      products.*
+    FROM cart_items
+    JOIN products ON products.id = cart_items.product_id
+    WHERE cart_items.user_id = ?
+    ORDER BY cart_items.updated_at DESC, cart_items.id DESC
+  `).all(userId)
+
+  return {
+    lines: rows.map((row) => ({
+      productId: row.cart_product_id,
+      option: row.cart_option_name,
+      quantity: row.cart_quantity,
+      product: productFromRow(row),
+    })),
+    activity: getAccountActivity(userId),
+  }
+}
+
 function addCartItem(db, userId, input) {
   const productId = text(input?.productId, 160)
   const option = text(input?.option, 200)
@@ -509,6 +534,12 @@ export function createStoreApiMiddleware() {
         return
       }
 
+      if (pathname === '/api/account/cart' && req.method === 'GET') {
+        const account = requireMember(req)
+        sendJson(res, 200, { cart: getCartSnapshot(account.id) })
+        return
+      }
+
       if (pathname === '/api/account/cart/items' && req.method === 'POST') {
         const account = requireMember(req)
         const body = await readJsonBody(req)
@@ -523,6 +554,34 @@ export function createStoreApiMiddleware() {
           throw error
         }
         sendJson(res, 200, { activity: getAccountActivity(account.id) })
+        return
+      }
+
+
+      const cartItemMatch = pathname.match(/^\/api\/account\/cart\/items\/([^/]+)$/)
+      if (cartItemMatch && ['PATCH', 'DELETE'].includes(req.method ?? '')) {
+        const account = requireMember(req)
+        const productId = decodeURIComponent(cartItemMatch[1])
+        const body = await readJsonBody(req)
+        const option = text(body.option, 200)
+        const db = getDatabase()
+
+        if (req.method === 'DELETE') {
+          db.prepare('DELETE FROM cart_items WHERE user_id = ? AND product_id = ? AND option_name = ?')
+            .run(account.id, productId, option)
+        } else {
+          const product = db.prepare("SELECT stock, status FROM products WHERE id = ?").get(productId)
+          if (!product) throw new StoreApiError(404, '상품을 찾을 수 없습니다.')
+          if (product.status !== 'active' || product.stock < 1) throw new StoreApiError(409, '현재 주문할 수 없는 상품입니다.')
+          const quantity = integer(body.quantity, 1, Math.min(99, product.stock))
+          const result = db.prepare(`
+            UPDATE cart_items SET quantity = ?, updated_at = ?
+            WHERE user_id = ? AND product_id = ? AND option_name = ?
+          `).run(quantity, new Date().toISOString(), account.id, productId, option)
+          if (!result.changes) throw new StoreApiError(404, '장바구니 상품을 찾을 수 없습니다.')
+        }
+
+        sendJson(res, 200, { cart: getCartSnapshot(account.id) })
         return
       }
 

@@ -48,6 +48,7 @@ interface CatalogProductPageProps {
   onGoToSignup: () => void
   onLogout: () => void
   onGoToProfile: () => void
+  onOpenCart: () => void
   onOpenPosts: () => void
   onOpenProduct: (productId: string) => void
   onCheckout: (productId: string, quantity: number, option: string) => void
@@ -79,6 +80,7 @@ export function CatalogProductPage({
   onGoToSignup,
   onLogout,
   onGoToProfile,
+  onOpenCart,
   onOpenPosts,
   onOpenProduct,
   onCheckout,
@@ -267,7 +269,7 @@ export function CatalogProductPage({
                 <button type="button" onClick={onGoToSignup}>회원가입<em>+2,000 Points</em></button>
               </>
             )}
-            <button type="button" aria-label="장바구니"><ShoppingBag size={17} /><b>{cartCount}</b></button>
+            <button type="button" onClick={onOpenCart} aria-label={`장바구니 ${cartCount}`}><ShoppingBag size={17} /><b>{cartCount}</b></button>
           </div>
         </div>
 
@@ -287,7 +289,7 @@ export function CatalogProductPage({
         </nav>
 
         <aside className={headerMenuOpen ? 'blanca-mobile-drawer is-open' : 'blanca-mobile-drawer'}>
-          <div className="blanca-mobile-drawer__account">{authSession ? <><button type="button" onClick={onGoToProfile}>{authSession.displayName}님<span>회원정보 수정</span></button><button type="button" onClick={onLogout}>로그아웃</button></> : <><button type="button" onClick={onGoToLogin}>로그인</button><button type="button" onClick={onGoToSignup}>회원가입 <span>+2,000 Points</span></button></>}</div>
+          <div className="blanca-mobile-drawer__account">{authSession ? <><button type="button" onClick={onGoToProfile}>{authSession.displayName}님<span>회원정보 수정</span></button><button type="button" onClick={onLogout}>로그아웃</button></> : <><button type="button" onClick={onGoToLogin}>로그인</button><button type="button" onClick={onGoToSignup}>회원가입 <span>+2,000 Points</span></button></>}<button type="button" onClick={onOpenCart}>장바구니 <span>{cartCount}</span></button></div>
           <div className="blanca-mobile-drawer__categories"><button type="button" onClick={onGoHome}>ALL</button>{headerCategories.map((category) => <button key={category} type="button" onClick={onGoHome}>{category}</button>)}<button type="button" onClick={onOpenPosts}>COMMUNITY</button></div>
         </aside>
       </header>

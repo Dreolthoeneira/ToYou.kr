@@ -32,6 +32,7 @@ interface StorePageProps {
   onGoToSignup: () => void
   onLogout: () => void
   onGoToProfile: () => void
+  onOpenCart: () => void
   onOpenPosts: () => void
   onOpenPost: (postId: string) => void
   onGoToAdmin: () => void
@@ -205,7 +206,7 @@ function BestProductCard({
   )
 }
 
-export function StorePage({ products, posts, settings, authSession, cartCount, onOpenProduct, onGoToLogin, onGoToSignup, onLogout, onGoToProfile, onOpenPosts, onOpenPost, onGoToAdmin, onOpenCollection, onCheckout }: StorePageProps) {
+export function StorePage({ products, posts, settings, authSession, cartCount, onOpenProduct, onGoToLogin, onGoToSignup, onLogout, onGoToProfile, onOpenCart, onOpenPosts, onOpenPost, onGoToAdmin, onOpenCollection, onCheckout }: StorePageProps) {
   const { locale } = useI18n()
   const text = locale === 'ko' ? storeCopy.ko : storeCopy.en
   const [menuOpen, setMenuOpen] = useState(false)
@@ -302,7 +303,7 @@ export function StorePage({ products, posts, settings, authSession, cartCount, o
                 <button type="button" onClick={onGoToSignup}>{text.account.signup}<em>{text.account.points}</em></button>
               </>
             )}
-            <button type="button" aria-label={text.account.bag}><ShoppingBag size={17} /><b>{cartCount}</b></button>
+            <button type="button" onClick={onOpenCart} aria-label={`${text.account.bag} ${cartCount}`}><ShoppingBag size={17} /><b>{cartCount}</b></button>
           </div>
         </div>
 
@@ -322,7 +323,7 @@ export function StorePage({ products, posts, settings, authSession, cartCount, o
         </nav>
 
         <aside className={menuOpen ? 'blanca-mobile-drawer is-open' : 'blanca-mobile-drawer'}>
-          <div className="blanca-mobile-drawer__account">{authSession ? <><button type="button" onClick={onGoToProfile}>{authSession.displayName}{locale === 'ko' ? '님' : ''}<span>{locale === 'ko' ? '회원정보 수정' : 'Edit profile'}</span></button><button type="button" onClick={onLogout}>{locale === 'ko' ? '로그아웃' : 'Sign out'}</button></> : <><button type="button" onClick={onGoToLogin}>{text.account.login}</button><button type="button" onClick={onGoToSignup}>{text.account.signup} <span>{text.account.points}</span></button></>}</div>
+          <div className="blanca-mobile-drawer__account">{authSession ? <><button type="button" onClick={onGoToProfile}>{authSession.displayName}{locale === 'ko' ? '님' : ''}<span>{locale === 'ko' ? '회원정보 수정' : 'Edit profile'}</span></button><button type="button" onClick={onLogout}>{locale === 'ko' ? '로그아웃' : 'Sign out'}</button></> : <><button type="button" onClick={onGoToLogin}>{text.account.login}</button><button type="button" onClick={onGoToSignup}>{text.account.signup} <span>{text.account.points}</span></button></>}<button type="button" onClick={onOpenCart}>{text.account.bag} <span>{cartCount}</span></button></div>
           <div className="blanca-mobile-drawer__categories"><button type="button" onClick={() => chooseCategory('ALL')}>{text.nav.all}</button>{categories.map((category) => <button key={category} type="button" onClick={() => chooseCategory(category)}>{category}</button>)}<button type="button" onClick={onOpenPosts}>{text.nav.community}</button></div>
         </aside>
       </header>

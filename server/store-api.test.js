@@ -188,6 +188,29 @@ test('TO YOU store data API', async (t) => {
     assert.equal(cart.response.status, 200)
     assert.equal(cart.payload.activity.cartCount, 2)
 
+    const cartView = await request('/api/account/cart')
+    assert.equal(cartView.response.status, 200)
+    assert.equal(cartView.payload.cart.lines.length, 1)
+    assert.equal(cartView.payload.cart.lines[0].product.id, seedProduct.id)
+    assert.equal(cartView.payload.cart.lines[0].option, 'Black')
+    assert.equal(cartView.payload.cart.lines[0].quantity, 2)
+
+    const cartQuantity = await request(`/api/account/cart/items/${seedProduct.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ option: 'Black', quantity: 3 }),
+    })
+    assert.equal(cartQuantity.response.status, 200)
+    assert.equal(cartQuantity.payload.cart.activity.cartCount, 3)
+    assert.equal(cartQuantity.payload.cart.lines[0].quantity, 3)
+
+    const cartDelete = await request(`/api/account/cart/items/${seedProduct.id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ option: 'Black' }),
+    })
+    assert.equal(cartDelete.response.status, 200)
+    assert.equal(cartDelete.payload.cart.activity.cartCount, 0)
+    assert.deepEqual(cartDelete.payload.cart.lines, [])
+
     const wishlist = await request(`/api/account/wishlist/${seedProduct.id}`, { method: 'PUT' })
     assert.deepEqual(wishlist.payload.activity.wishlistProductIds, [seedProduct.id])
 

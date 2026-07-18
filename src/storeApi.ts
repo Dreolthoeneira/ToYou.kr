@@ -10,12 +10,15 @@ import {
   deleteSupabaseProduct,
   deleteSupabaseReview,
   loadSupabaseAccountActivity,
+  loadSupabaseCart,
   loadSupabaseAdminSnapshot,
   loadSupabaseStorefrontSnapshot,
   requestSupabaseRestock,
+  removeSupabaseCartItem,
   saveSupabaseImportedProduct,
   setSupabaseWishlist,
   updateSupabaseOrderStatus,
+  updateSupabaseCartItemQuantity,
   updateSupabaseReviewStatus,
   updateSupabaseSettings,
   upsertSupabasePost,
@@ -44,6 +47,15 @@ export interface CartInput {
   productId: string
   option: string
   quantity: number
+}
+
+export interface CartLine extends CartInput {
+  product: CatalogProduct
+}
+
+export interface CartSnapshot {
+  lines: CartLine[]
+  activity: AccountActivity
 }
 
 export interface LegacyStoreData extends AdminSnapshot {}
@@ -186,6 +198,30 @@ export async function addServerCartItems(items: CartInput[]) {
     body: JSON.stringify({ items }),
   })
   return result.activity
+}
+
+export async function loadServerCart() {
+  if (isSupabaseConfigured) return loadSupabaseCart()
+  const result = await request<{ cart: CartSnapshot }>('/api/account/cart')
+  return result.cart
+}
+
+export async function updateServerCartItemQuantity(productId: string, option: string, quantity: number) {
+  if (isSupabaseConfigured) return updateSupabaseCartItemQuantity(productId, option, quantity)
+  const result = await request<{ cart: CartSnapshot }>(`/api/account/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ option, quantity }),
+  })
+  return result.cart
+}
+
+export async function removeServerCartItem(productId: string, option: string) {
+  if (isSupabaseConfigured) return removeSupabaseCartItem(productId, option)
+  const result = await request<{ cart: CartSnapshot }>(`/api/account/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ option }),
+  })
+  return result.cart
 }
 
 export async function setServerWishlist(productId: string, liked: boolean) {

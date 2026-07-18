@@ -5,6 +5,7 @@ export type AppRoute =
   | { page: 'import-product'; productId: string }
   | { page: 'product'; productId: string }
   | { page: 'checkout'; productId: string }
+  | { page: 'cart' }
   | { page: 'admin-products' }
   | { page: 'login' }
   | { page: 'signup' }
@@ -55,6 +56,10 @@ export function parseRoute(pathname: string): AppRoute {
 
   if (normalized === '/account/profile') {
     return { page: 'profile' }
+  }
+
+  if (normalized === '/cart') {
+    return { page: 'cart' }
   }
 
   if (collectionMatch) {
@@ -113,6 +118,10 @@ export function getCheckoutPath(productId: string, quantity: number, option: str
   const params = new URLSearchParams({ quantity: String(quantity) })
   if (option) params.set('option', option)
   return `/checkout/${encodeURIComponent(productId)}?${params.toString()}`
+}
+
+export function getCartPath() {
+  return '/cart'
 }
 
 export function getImportedProductPath(productId: string) {

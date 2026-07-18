@@ -13,6 +13,7 @@ interface PostsPageProps {
   onGoToSignup: () => void
   onLogout: () => void
   onGoToProfile: () => void
+  onOpenCart: () => void
   onGoPosts: () => void
   onOpenPost: (postId: string) => void
 }
@@ -50,7 +51,7 @@ function PostCover({ post, featured = false }: { post: AdminPost; featured?: boo
   )
 }
 
-function CommunityHeader({ authSession, onGoHome, onGoPosts, onGoToLogin, onGoToSignup, onLogout, onGoToProfile }: Pick<PostsPageProps, 'authSession' | 'onGoHome' | 'onGoPosts' | 'onGoToLogin' | 'onGoToSignup' | 'onLogout' | 'onGoToProfile'>) {
+function CommunityHeader({ authSession, onGoHome, onGoPosts, onGoToLogin, onGoToSignup, onLogout, onGoToProfile, onOpenCart }: Pick<PostsPageProps, 'authSession' | 'onGoHome' | 'onGoPosts' | 'onGoToLogin' | 'onGoToSignup' | 'onLogout' | 'onGoToProfile' | 'onOpenCart'>) {
   return (
     <>
       <div className="community-announcement"><span>TO YOU STORIES</span><span>새로운 취향과 스토어 소식을 전합니다</span><span>매주 새로운 이야기 업데이트</span></div>
@@ -59,14 +60,14 @@ function CommunityHeader({ authSession, onGoHome, onGoPosts, onGoToLogin, onGoTo
         <nav aria-label="커뮤니티 메뉴"><button type="button" onClick={onGoHome}>SHOP</button><button type="button" className="is-active" onClick={onGoPosts}>COMMUNITY</button></nav>
         <div className="community-header__account">
           {authSession ? <><button type="button" className="community-header__member" onClick={onGoToProfile} aria-label={`${authSession.displayName} 회원정보 수정`}><i />{authSession.displayName}님</button><button type="button" onClick={onLogout}>로그아웃</button></> : <><button type="button" onClick={onGoToLogin}>로그인</button><button type="button" onClick={onGoToSignup}>회원가입</button></>}
-          <button type="button" aria-label="장바구니"><ShoppingBag size={17} /></button>
+          <button type="button" onClick={onOpenCart} aria-label="장바구니 열기"><ShoppingBag size={17} /></button>
         </div>
       </header>
     </>
   )
 }
 
-export function PostsPage({ posts, postId, authSession, onGoHome, onGoToLogin, onGoToSignup, onLogout, onGoToProfile, onGoPosts, onOpenPost }: PostsPageProps) {
+export function PostsPage({ posts, postId, authSession, onGoHome, onGoToLogin, onGoToSignup, onLogout, onGoToProfile, onOpenCart, onGoPosts, onOpenPost }: PostsPageProps) {
   const [filter, setFilter] = useState<PostFilter>('all')
   const [query, setQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(6)
@@ -80,7 +81,7 @@ export function PostsPage({ posts, postId, authSession, onGoHome, onGoToLogin, o
     if (!selectedPost) {
       return (
         <div className="community-page">
-          <CommunityHeader authSession={authSession} onGoHome={onGoHome} onGoPosts={onGoPosts} onGoToLogin={onGoToLogin} onGoToSignup={onGoToSignup} onLogout={onLogout} onGoToProfile={onGoToProfile} />
+          <CommunityHeader authSession={authSession} onGoHome={onGoHome} onGoPosts={onGoPosts} onGoToLogin={onGoToLogin} onGoToSignup={onGoToSignup} onLogout={onLogout} onGoToProfile={onGoToProfile} onOpenCart={onOpenCart} />
           <main className="community-empty"><span className="eyebrow">STORY NOT FOUND</span><h1>글을 찾을 수 없어요.</h1><button type="button" onClick={onGoPosts}>목록으로 돌아가기</button></main>
         </div>
       )
@@ -91,7 +92,7 @@ export function PostsPage({ posts, postId, authSession, onGoHome, onGoToLogin, o
 
     return (
       <div className="community-page">
-        <CommunityHeader authSession={authSession} onGoHome={onGoHome} onGoPosts={onGoPosts} onGoToLogin={onGoToLogin} onGoToSignup={onGoToSignup} onLogout={onLogout} onGoToProfile={onGoToProfile} />
+        <CommunityHeader authSession={authSession} onGoHome={onGoHome} onGoPosts={onGoPosts} onGoToLogin={onGoToLogin} onGoToSignup={onGoToSignup} onLogout={onLogout} onGoToProfile={onGoToProfile} onOpenCart={onOpenCart} />
         <main className="community-detail">
           <button type="button" className="community-detail__back" onClick={onGoPosts}><ArrowLeft size={16} /> 전체 이야기</button>
           <header className="community-detail__heading">
@@ -124,7 +125,7 @@ export function PostsPage({ posts, postId, authSession, onGoHome, onGoToLogin, o
 
   return (
     <div className="community-page">
-      <CommunityHeader authSession={authSession} onGoHome={onGoHome} onGoPosts={onGoPosts} onGoToLogin={onGoToLogin} onGoToSignup={onGoToSignup} onLogout={onLogout} onGoToProfile={onGoToProfile} />
+      <CommunityHeader authSession={authSession} onGoHome={onGoHome} onGoPosts={onGoPosts} onGoToLogin={onGoToLogin} onGoToSignup={onGoToSignup} onLogout={onLogout} onGoToProfile={onGoToProfile} onOpenCart={onOpenCart} />
       <main className="community-main">
         <section className="community-intro">
           <span className="eyebrow">JOURNAL &amp; NOTICE</span>

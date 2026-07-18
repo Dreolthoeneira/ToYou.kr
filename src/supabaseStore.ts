@@ -3,7 +3,7 @@ import { defaultStoreSettings } from './adminData'
 import type { CatalogProduct } from './catalog'
 import type { Product } from './data'
 import { requireSupabase } from './supabaseClient'
-import type { AccountActivity, AdminSnapshot, CartInput, StorefrontSnapshot } from './storeApi'
+import type { AccountActivity, AdminSnapshot, CartInput, CartSnapshot, StorefrontSnapshot } from './storeApi'
 
 type Row = Record<string, unknown>
 
@@ -325,6 +325,49 @@ export async function addSupabaseCartItems(items: CartInput[]) {
   const { error } = await requireSupabase().rpc('add_cart_items', { p_items: items })
   if (error) fail(error, '장바구니에 상품을 담지 못했습니다.')
   return loadSupabaseAccountActivity()
+}
+
+export async function loadSupabaseCart(): Promise<CartSnapshot> {
+  await requireUserId()
+  const { data, error } = await requireSupabase()
+    .from('cart_items')
+    .select('product_id, option_name, quantity, products(*)')
+    .order('updated_at', { ascending: false })
+  if (error) fail(error, '장바구니를 불러오지 못했습니다.')
+
+  const lines = (data as Array<Row & { products: Row | Row[] | null }>).flatMap((row) => {
+    const productRow = Array.isArray(row.products) ? row.products[0] : row.products
+    if (!productRow) return []
+    return [{
+      productId: String(row.product_id),
+      option: String(row.option_name),
+      quantity: Number(row.quantity),
+      product: productFromRow(productRow),
+    }]
+  })
+
+  return { lines, activity: await loadSupabaseAccountActivity() }
+}
+
+export async function updateSupabaseCartItemQuantity(productId: string, option: string, quantity: number) {
+  await requireUserId()
+  const { error } = await requireSupabase().rpc('set_cart_item_quantity', {
+    p_product_id: productId,
+    p_option: option,
+    p_quantity: quantity,
+  })
+  if (error) fail(error, '장바구니 수량을 변경하지 못했습니다.')
+  return loadSupabaseCart()
+}
+
+export async function removeSupabaseCartItem(productId: string, option: string) {
+  const userId = await requireUserId()
+  const { error } = await requireSupabase().from('cart_items').delete()
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .eq('option_name', option)
+  if (error) fail(error, '장바구니 상품을 삭제하지 못했습니다.')
+  return loadSupabaseCart()
 }
 
 export async function setSupabaseWishlist(productId: string, liked: boolean) {

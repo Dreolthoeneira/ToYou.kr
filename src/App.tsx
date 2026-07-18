@@ -11,6 +11,7 @@ import { SeasonalCollectionPage } from './pages/SeasonalCollectionPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { PostsPage } from './pages/PostsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { CartPage } from './pages/CartPage'
 import { loadCatalog, type CatalogProduct } from './catalog'
 import {
   loadAdminOrders,
@@ -24,7 +25,7 @@ import {
   type StoreSettings,
 } from './adminData'
 import { detectNavigatorLocale, getLocaleOption, useI18n, type Locale } from './i18n'
-import { getAppPathname, getBrowserPath, getCheckoutPath, getCollectionPath, getImportedProductPath, getPostPath, getPostsPath, getProductPath, parseRoute } from './router'
+import { getAppPathname, getBrowserPath, getCartPath, getCheckoutPath, getCollectionPath, getImportedProductPath, getPostPath, getPostsPath, getProductPath, parseRoute } from './router'
 import type { AuthSession } from './authSession'
 import { loadServerAccount, logoutServerAccount } from './accountApi'
 import { clearCustomerProfile, saveCustomerProfile } from './customerProfile'
@@ -39,6 +40,7 @@ import {
   deleteServerReview,
   loadAdminSnapshot,
   loadAccountActivity,
+  removeServerCartItem,
   loadStorefrontSnapshot,
   updateServerOrderStatus,
   updateServerReviewStatus,
@@ -239,6 +241,10 @@ export default function App() {
     navigate(getCheckoutPath(productId, quantity, option))
   }
 
+  function openCartCheckout(productId: string, quantity: number, option: string) {
+    navigate(`${getCheckoutPath(productId, quantity, option)}&source=cart`)
+  }
+
   function applyStoreSnapshot(snapshot: StorefrontSnapshot | AdminSnapshot) {
     setCatalog(snapshot.products)
     setPosts(snapshot.posts)
@@ -342,6 +348,14 @@ export default function App() {
     const result = await createServerOrder(order)
     setOrders((current) => [result.order, ...current])
     setCatalog((current) => current.map((product) => product.id === result.product.id ? result.product : product))
+    if (new URLSearchParams(window.location.search).get('source') === 'cart') {
+      try {
+        const cart = await removeServerCartItem(order.productId, order.option)
+        setAccountActivity(cart.activity)
+      } catch {
+        void loadAccountActivity().then(setAccountActivity).catch(() => undefined)
+      }
+    }
     return result.order
   }
 
@@ -427,7 +441,17 @@ export default function App() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="page-transition-wrapper"
         >
-          {route.page === 'checkout' ? (
+          {route.page === 'cart' ? (
+            <CartPage
+              authSession={authSession}
+              cartCount={accountActivity.cartCount}
+              onGoHome={() => navigate('/')}
+              onGoToLogin={() => navigate('/login')}
+              onOpenProduct={openProduct}
+              onCheckout={openCartCheckout}
+              onCartActivityChange={setAccountActivity}
+            />
+          ) : route.page === 'checkout' ? (
             <CheckoutPage
               product={catalog.find((product) => product.id === route.productId)}
               authSession={authSession}
@@ -454,6 +478,7 @@ export default function App() {
               onGoToSignup={() => navigate('/signup')}
               onLogout={logout}
               onGoToProfile={() => navigate('/account/profile')}
+              onOpenCart={() => navigate(getCartPath())}
               onGoPosts={() => navigate(getPostsPath())}
               onOpenPost={(postId) => navigate(getPostPath(postId))}
             />
@@ -489,6 +514,7 @@ export default function App() {
               authSession={authSession}
               onLogout={logout}
               onGoToProfile={() => navigate('/account/profile')}
+              onOpenCart={() => navigate(getCartPath())}
               onOpenPosts={() => navigate(getPostsPath())}
               onOpenProduct={openProduct}
               onCheckout={openCheckout}
@@ -545,6 +571,7 @@ export default function App() {
               onGoToSignup={() => navigate('/signup')}
               onLogout={logout}
               onGoToProfile={() => navigate('/account/profile')}
+              onOpenCart={() => navigate(getCartPath())}
               onOpenPosts={() => navigate(getPostsPath())}
               onOpenPost={(postId) => navigate(getPostPath(postId))}
               onGoToAdmin={() => navigate('/admin/products')}
