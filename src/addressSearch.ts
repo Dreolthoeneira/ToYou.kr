@@ -16,8 +16,8 @@ interface KakaoPostcodeData {
 interface KakaoPostcodeOptions {
   oncomplete: (data: KakaoPostcodeData) => void
   onclose: (state: 'FORCE_CLOSE' | 'COMPLETE_CLOSE') => void
-  width?: number
-  height?: number
+  width?: number | string
+  height?: number | string
   animation?: boolean
 }
 
@@ -26,12 +26,20 @@ interface KakaoPostcodeOpenOptions {
   popupKey?: string
 }
 
+interface KakaoPostcodeEmbedOptions {
+  autoClose?: boolean
+}
+
 type KakaoPostcodeConstructor = new (options: KakaoPostcodeOptions) => {
   open: (options?: KakaoPostcodeOpenOptions) => void
+  embed: (element: HTMLElement, options?: KakaoPostcodeEmbedOptions) => void
 }
 
 declare global {
   interface Window {
+    daum?: {
+      Postcode?: KakaoPostcodeConstructor
+    }
     kakao?: {
       Postcode?: KakaoPostcodeConstructor
     }
@@ -42,7 +50,7 @@ const postcodeScriptUrl = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod
 let postcodeScriptPromise: Promise<KakaoPostcodeConstructor> | null = null
 
 function getPostcodeConstructor() {
-  return window.kakao?.Postcode
+  return window.daum?.Postcode ?? window.kakao?.Postcode
 }
 
 function loadPostcodeScript() {
@@ -74,16 +82,11 @@ function loadPostcodeScript() {
 
     const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${postcodeScriptUrl}"]`)
     if (existingScript) {
-      existingScript.addEventListener('load', handleLoad, { once: true })
-      existingScript.addEventListener('error', handleError, { once: true })
-      window.setTimeout(() => {
-        const Postcode = getPostcodeConstructor()
-        if (Postcode) {
-          window.clearTimeout(timeoutId)
-          resolve(Postcode)
-        }
-      }, 0)
-      return
+      // A script tag can remain in the document after a browser extension,
+      // privacy setting, or transient network failure prevented execution.
+      // Replace that stale tag instead of waiting for a load event that has
+      // already happened.
+      existingScript.remove()
     }
 
     const script = document.createElement('script')
@@ -111,29 +114,98 @@ function formatSelectedAddress(data: KakaoPostcodeData) {
 }
 
 export async function openKoreanAddressSearch(): Promise<KoreanAddressSearchResult | null> {
-  const Postcode = await loadPostcodeScript()
-
   return new Promise((resolve) => {
-    let selected = false
-    const postcode = new Postcode({
-      width: 500,
-      height: 600,
-      animation: true,
-      oncomplete: (data) => {
-        selected = true
-        resolve({
-          postalCode: data.zonecode,
-          address: formatSelectedAddress(data),
-        })
-      },
-      onclose: () => {
-        if (!selected) resolve(null)
-      },
+    const overlay = document.createElement('div')
+    overlay.className = 'postcode-modal'
+    overlay.setAttribute('role', 'presentation')
+
+    const dialog = document.createElement('section')
+    dialog.className = 'postcode-modal__dialog'
+    dialog.setAttribute('role', 'dialog')
+    dialog.setAttribute('aria-modal', 'true')
+    dialog.setAttribute('aria-labelledby', 'postcode-modal-title')
+
+    const header = document.createElement('header')
+    header.className = 'postcode-modal__header'
+
+    const title = document.createElement('h2')
+    title.id = 'postcode-modal-title'
+    title.textContent = '주소 검색'
+
+    const closeButton = document.createElement('button')
+    closeButton.className = 'postcode-modal__close'
+    closeButton.type = 'button'
+    closeButton.setAttribute('aria-label', '주소 검색 닫기')
+    closeButton.textContent = '×'
+
+    const content = document.createElement('div')
+    content.className = 'postcode-modal__content'
+
+    const status = document.createElement('div')
+    status.className = 'postcode-modal__status'
+    status.setAttribute('role', 'status')
+    status.textContent = '주소 검색 서비스를 불러오는 중입니다.'
+
+    const embedTarget = document.createElement('div')
+    embedTarget.className = 'postcode-modal__embed'
+    embedTarget.hidden = true
+
+    header.append(title, closeButton)
+    content.append(status, embedTarget)
+    dialog.append(header, content)
+    overlay.append(dialog)
+    document.body.append(overlay)
+    document.body.classList.add('postcode-modal-open')
+    closeButton.focus()
+
+    let settled = false
+    const finish = (result: KoreanAddressSearchResult | null) => {
+      if (settled) return
+      settled = true
+      window.removeEventListener('keydown', handleKeydown)
+      document.body.classList.remove('postcode-modal-open')
+      overlay.remove()
+      resolve(result)
+    }
+
+    closeButton.addEventListener('click', () => finish(null))
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) finish(null)
     })
 
-    postcode.open({
-      popupTitle: 'TO YOU 주소 검색',
-      popupKey: 'toyouPostcode',
-    })
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') finish(null)
+    }
+    window.addEventListener('keydown', handleKeydown)
+
+    loadPostcodeScript()
+      .then((Postcode) => {
+        if (settled) return
+        status.remove()
+        embedTarget.hidden = false
+
+        const postcode = new Postcode({
+          width: '100%',
+          height: '100%',
+          animation: true,
+          oncomplete: (data) => {
+            finish({
+              postalCode: data.zonecode,
+              address: formatSelectedAddress(data),
+            })
+          },
+          onclose: () => undefined,
+        })
+
+        postcode.embed(embedTarget, { autoClose: false })
+      })
+      .catch((error: unknown) => {
+        if (settled) return
+        status.classList.add('postcode-modal__status--error')
+        status.setAttribute('role', 'alert')
+        status.textContent = error instanceof Error
+          ? error.message
+          : '주소 검색 서비스를 불러오지 못했습니다.'
+      })
   })
 }

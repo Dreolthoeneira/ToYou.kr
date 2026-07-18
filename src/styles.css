@@ -14905,6 +14905,102 @@ body {
 }
 
 /* Shared Korean postcode search controls */
+.postcode-modal-open {
+  overflow: hidden;
+}
+
+.postcode-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.postcode-modal__dialog {
+  width: min(560px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.3);
+}
+
+.postcode-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 0 18px 0 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.postcode-modal__header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.postcode-modal__close {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.postcode-modal__close:hover {
+  background: #e5e7eb;
+}
+
+.postcode-modal__content,
+.postcode-modal__embed {
+  width: 100%;
+  height: min(620px, calc(100vh - 140px));
+  min-height: 480px;
+}
+
+.postcode-modal__status {
+  display: grid;
+  height: 100%;
+  min-height: 480px;
+  place-items: center;
+  padding: 32px;
+  color: #4b5563;
+  font-size: 15px;
+  text-align: center;
+}
+
+.postcode-modal__status--error {
+  color: #b42318;
+}
+
+@media (max-width: 640px) {
+  .postcode-modal {
+    align-items: end;
+    padding: 0;
+  }
+
+  .postcode-modal__dialog {
+    border-radius: 22px 22px 0 0;
+  }
+
+  .postcode-modal__content,
+  .postcode-modal__embed {
+    height: calc(100vh - 96px);
+    min-height: 420px;
+  }
+}
 .toss-auth-address-search,
 .checkout-address-search,
 .profile-address-search {
