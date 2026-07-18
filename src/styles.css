@@ -14667,6 +14667,249 @@ body {
   line-height: 1.55;
 }
 
+/* Email delivery confirmation dialog */
+.email-sent-modal {
+  position: fixed;
+  z-index: 10020;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(26, 22, 19, 0.58);
+  backdrop-filter: blur(12px);
+  animation: email-modal-fade 240ms ease both;
+}
+
+.email-sent-modal__panel {
+  position: relative;
+  width: min(100%, 520px);
+  overflow: hidden;
+  padding: 42px;
+  border: 1px solid rgba(120, 91, 70, 0.18);
+  border-radius: 28px;
+  background: #fffdf9;
+  box-shadow: 0 34px 100px rgba(30, 22, 17, 0.25);
+  text-align: center;
+  animation: email-modal-rise 480ms cubic-bezier(.2, .9, .25, 1.1) both;
+}
+
+.email-sent-modal__panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #302721, #d56c50 52%, #d9b89c);
+}
+
+.email-sent-modal__close {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #e8e0d8;
+  border-radius: 50%;
+  background: rgba(255, 253, 249, 0.92);
+  color: #746b64;
+}
+
+.email-sent-modal__visual {
+  position: relative;
+  display: grid;
+  width: 118px;
+  height: 118px;
+  margin: 0 auto 22px;
+  place-items: center;
+}
+
+.email-sent-modal__orbit {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(206, 104, 76, 0.24);
+  border-radius: 50%;
+}
+
+.email-sent-modal__orbit--one::before,
+.email-sent-modal__orbit--two::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d66d50;
+  box-shadow: 0 0 0 5px rgba(214, 109, 80, 0.12);
+}
+
+.email-sent-modal__orbit--one {
+  animation: email-orbit 8s linear infinite;
+}
+
+.email-sent-modal__orbit--one::before { top: 8px; left: 16px; }
+.email-sent-modal__orbit--two { inset: 16px; animation: email-orbit 6s linear infinite reverse; }
+.email-sent-modal__orbit--two::before { right: -2px; bottom: 19px; background: #25201c; }
+
+.email-sent-modal__mail {
+  position: relative;
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 24px;
+  background: #251f1b;
+  color: #fff;
+  box-shadow: 0 15px 32px rgba(47, 34, 25, 0.2);
+  transform: rotate(-4deg);
+}
+
+.email-sent-modal__mail b {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 4px solid #fffdf9;
+  border-radius: 50%;
+  background: #d86b4d;
+}
+
+.email-sent-modal__eyebrow {
+  color: #b05c46;
+  font-size: 0.64rem;
+  font-weight: 780;
+  letter-spacing: 0.16em;
+}
+
+.email-sent-modal h2 {
+  margin: 12px 0 11px;
+  color: #211c18;
+  font-family: var(--editorial-serif);
+  font-size: clamp(2rem, 5vw, 2.65rem);
+  font-weight: 540;
+  letter-spacing: -0.055em;
+  line-height: 1.12;
+}
+
+.email-sent-modal__panel > p {
+  max-width: 38ch;
+  margin: 0 auto;
+  color: #756d66;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.email-sent-modal__address {
+  display: grid;
+  gap: 7px;
+  margin: 27px 0 12px;
+  padding: 16px 18px;
+  border: 1px solid #eadfd6;
+  border-radius: 15px;
+  background: #f8f2eb;
+  text-align: left;
+}
+
+.email-sent-modal__address span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #a06955;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.email-sent-modal__address strong {
+  overflow-wrap: anywhere;
+  color: #29231f;
+  font-size: 0.9rem;
+}
+
+.email-sent-modal__inbox {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: #d76649;
+  color: #fff;
+  font-size: 0.78rem;
+  text-decoration: none;
+  box-shadow: 0 12px 26px rgba(196, 84, 57, 0.2);
+  transition: transform 170ms ease, background 170ms ease;
+}
+
+.email-sent-modal__inbox:hover { background: #c6573d; transform: translateY(-2px); }
+.email-sent-modal__inbox b { font-weight: 800; }
+
+.email-sent-modal__help {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #eee7e0;
+  color: #8b837b;
+  text-align: left;
+}
+
+.email-sent-modal__help svg { color: #b76b52; }
+.email-sent-modal__help p { margin: 0; font-size: 0.68rem; line-height: 1.65; }
+
+.email-sent-modal__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.email-sent-modal__footer button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 720;
+}
+
+.email-sent-modal__resend { border: 1px solid #e7ddd5; background: #fff; color: #514942; }
+.email-sent-modal__done { border: 1px solid #241f1b; background: #241f1b; color: #fff; }
+.email-sent-modal__resend:disabled { opacity: 0.65; }
+.email-sent-modal__error { margin-top: 10px !important; color: #c74336 !important; font-size: 0.68rem !important; }
+.email-sent-modal .is-spinning { animation: email-spin 850ms linear infinite; }
+
+@keyframes email-modal-fade { from { opacity: 0; } }
+@keyframes email-modal-rise { from { opacity: 0; transform: translateY(28px) scale(.96); } }
+@keyframes email-orbit { to { transform: rotate(360deg); } }
+@keyframes email-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 580px) {
+  .email-sent-modal { align-items: end; padding: 12px; }
+  .email-sent-modal__panel { padding: 36px 21px 24px; border-radius: 24px; }
+  .email-sent-modal__visual { width: 96px; height: 96px; margin-bottom: 16px; }
+  .email-sent-modal__mail { width: 62px; height: 62px; border-radius: 21px; }
+  .email-sent-modal__footer { grid-template-columns: 1fr; }
+  .email-sent-modal__done { grid-row: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .email-sent-modal,
+  .email-sent-modal__panel,
+  .email-sent-modal__orbit,
+  .email-sent-modal .is-spinning { animation: none; }
+}
+
 .toss-auth-form--recovery {
   margin-top: 34px;
 }

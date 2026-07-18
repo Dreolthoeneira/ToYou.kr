@@ -164,6 +164,12 @@ async function requireUserId() {
   return data.user.id
 }
 
+function notifyOrderEmail(event: 'order_complete' | 'shipping_started' | 'delivered', orderId: string) {
+  void requireSupabase().functions.invoke('send-order-email', {
+    body: { event, orderId },
+  }).catch(() => undefined)
+}
+
 async function persistManagedImage(imageUrl: string | undefined, folder: string) {
   if (!imageUrl?.startsWith('data:image/')) return imageUrl || ''
   const response = await fetch(imageUrl)
@@ -261,7 +267,9 @@ export async function createSupabaseOrder(order: AdminOrder) {
   const { data, error } = await requireSupabase().rpc('create_store_order', { p_order: order })
   if (error) fail(error, '주문을 생성하지 못했습니다.')
   const payload = data as { order: Row; product: Row }
-  return { order: orderFromRow(payload.order), product: productFromRow(payload.product) }
+  const createdOrder = orderFromRow(payload.order)
+  notifyOrderEmail('order_complete', createdOrder.id)
+  return { order: createdOrder, product: productFromRow(payload.product) }
 }
 
 export async function loadSupabaseAccountOrders(): Promise<AdminOrder[]> {
@@ -279,7 +287,10 @@ export async function updateSupabaseOrderStatus(orderId: string, status: AdminOr
   const { data, error } = await requireSupabase().rpc('update_store_order_status', { p_order_id: orderId, p_status: status })
   if (error) fail(error, '주문 상태를 변경하지 못했습니다.')
   const payload = data as { order: Row; product: Row | null }
-  return { order: orderFromRow(payload.order), product: payload.product ? productFromRow(payload.product) : null }
+  const updatedOrder = orderFromRow(payload.order)
+  if (status === 'shipping') notifyOrderEmail('shipping_started', updatedOrder.id)
+  if (status === 'delivered') notifyOrderEmail('delivered', updatedOrder.id)
+  return { order: updatedOrder, product: payload.product ? productFromRow(payload.product) : null }
 }
 
 export async function updateSupabaseReviewStatus(reviewId: string, status: AdminReviewStatus) {

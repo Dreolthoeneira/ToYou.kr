@@ -18,8 +18,9 @@ import {
   Smartphone,
 } from 'lucide-react'
 import type { AuthSession } from '../authSession'
-import { AccountApiError, loginWithEmail, loginWithSocial, requestPasswordReset, signupWithEmail, updatePassword } from '../accountApi'
+import { AccountApiError, loginWithEmail, loginWithSocial, requestPasswordReset, resendSignupConfirmation, signupWithEmail, updatePassword } from '../accountApi'
 import { openKoreanAddressSearch } from '../addressSearch'
+import { EmailSentModal, type EmailSentKind } from '../components/EmailSentModal'
 import { LegalDocumentModal, type LegalDocumentType } from '../components/LegalDocumentModal'
 import { saveCustomerProfile } from '../customerProfile'
 import { useI18n } from '../i18n'
@@ -204,6 +205,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
   const [legalDocument, setLegalDocument] = useState<LegalDocumentType | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [resetEmailSent, setResetEmailSent] = useState(false)
+  const [emailSentNotice, setEmailSentNotice] = useState<{ kind: EmailSentKind; email: string } | null>(null)
   const [phoneVerification, setPhoneVerification] = useState<PhoneVerificationState>(initialPhoneVerification)
   const [phoneVerificationSecondsLeft, setPhoneVerificationSecondsLeft] = useState(0)
   const [phoneCodeCopied, setPhoneCodeCopied] = useState(false)
@@ -218,6 +220,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     setSocialProvider(null)
     setLegalDocument(null)
     setResetEmailSent(false)
+    setEmailSentNotice(null)
     setPhoneVerification(initialPhoneVerification)
     setPhoneVerificationSecondsLeft(0)
     setPhoneCodeCopied(false)
@@ -403,7 +406,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
       if (requestError instanceof AccountApiError && requestError.code === 'invalid_credentials') {
         setError(locale === 'ko' ? '이메일 또는 비밀번호가 올바르지 않습니다.' : 'The email or password is incorrect.')
       } else if (requestError instanceof AccountApiError && requestError.code === 'email_not_confirmed') {
-        setError(locale === 'ko' ? '이메일 인증을 완료한 뒤 로그인해 주세요.' : 'Confirm your email before signing in.')
+        setEmailSentNotice({ kind: 'confirmation', email: email.trim() })
       } else {
         setError(requestError instanceof Error ? requestError.message : '로그인하지 못했습니다.')
       }
@@ -424,6 +427,7 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
     try {
       await requestPasswordReset(email.trim())
       setResetEmailSent(true)
+      setEmailSentNotice({ kind: 'recovery', email: email.trim() })
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '비밀번호 재설정 메일을 보내지 못했습니다.')
     } finally {
@@ -526,7 +530,11 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
         onAuthComplete(account.session)
         setComplete(true)
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : '회원가입을 처리하지 못했습니다.')
+        if (requestError instanceof AccountApiError && requestError.status === 202) {
+          setEmailSentNotice({ kind: 'confirmation', email: nextProfile.email })
+        } else {
+          setError(requestError instanceof Error ? requestError.message : '회원가입을 처리하지 못했습니다.')
+        }
       } finally {
         setSubmitting(false)
       }
@@ -641,7 +649,6 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
                   <label><span>{copy.login.email}</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={copy.login.emailPlaceholder} autoComplete="email" /></label>
                   <label><span>{copy.login.password}</span><div className="toss-auth-password"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={copy.login.passwordPlaceholder} autoComplete="current-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
                   <button type="button" disabled={submitting} className="toss-auth-forgot" onClick={handleForgotPassword}>{resetEmailSent ? (locale === 'ko' ? '재설정 메일 다시 보내기' : 'Send the reset email again') : copy.login.forgot}</button>
-                  {resetEmailSent ? <p className="toss-auth-success" role="status">{locale === 'ko' ? '비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 눌러 새 비밀번호를 설정해 주세요.' : 'We sent a password reset email. Open its link to choose a new password.'}</p> : null}
                   {error ? <p className="toss-auth-error" role="alert">{error}</p> : null}
                   <button type="submit" disabled={submitting} className="toss-auth-primary">{submitting ? (locale === 'ko' ? '확인 중…' : 'Signing in…') : copy.login.submit} <ArrowRight size={17} /></button>
                 </form>
@@ -754,6 +761,17 @@ export function AuthPage({ mode, onGoHome, onSwitchMode, onAuthComplete }: AuthP
         </section>
       </main>
       {legalDocument ? <LegalDocumentModal documentType={legalDocument} locale={locale} onClose={() => setLegalDocument(null)} /> : null}
+      {emailSentNotice ? (
+        <EmailSentModal
+          kind={emailSentNotice.kind}
+          email={emailSentNotice.email}
+          locale={locale}
+          onClose={() => setEmailSentNotice(null)}
+          onResend={() => emailSentNotice.kind === 'confirmation'
+            ? resendSignupConfirmation(emailSentNotice.email)
+            : requestPasswordReset(emailSentNotice.email)}
+        />
+      ) : null}
     </div>
   )
 }

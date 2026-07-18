@@ -143,6 +143,21 @@ export async function requestPasswordReset(email: string) {
   }
 }
 
+export async function resendSignupConfirmation(email: string) {
+  if (!isSupabaseConfigured) {
+    throw new AccountApiError('가입 확인 메일 재전송은 운영 사이트에서 이용해 주세요.', 503)
+  }
+
+  const { error } = await requireSupabase().auth.resend({
+    type: 'signup',
+    email,
+  })
+
+  if (error) {
+    throw new AccountApiError(error.message || '가입 확인 메일을 다시 보내지 못했습니다.', error.status ?? 400, error.code)
+  }
+}
+
 export async function updatePassword(password: string) {
   if (!isSupabaseConfigured) {
     throw new AccountApiError('비밀번호 재설정은 운영 사이트에서 이용해 주세요.', 503)

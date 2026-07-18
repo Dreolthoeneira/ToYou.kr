@@ -27,8 +27,63 @@ otp_length = 8
 otp_expiry = 3600
 
 [auth.email.template.confirmation]
-subject = "[TO YOU] 이메일 인증을 완료해 주세요"
+subject = "[TO YOU] 가입을 완성할 이메일 인증이 도착했어요"
 content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "[TO YOU] 새 비밀번호를 설정해 주세요"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "[TO YOU] 한 번에 로그인하는 링크가 도착했어요"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.email_change]
+subject = "[TO YOU] 새 이메일 주소를 확인해 주세요"
+content_path = "./supabase/templates/email-change.html"
+
+[auth.email.template.invite]
+subject = "[TO YOU] 당신을 위한 초대장이 도착했어요"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.reauthentication]
+subject = "[TO YOU] {{ .Token }} 본인 확인 코드예요"
+content_path = "./supabase/templates/reauthentication.html"
+
+[auth.email.notification.password_changed]
+enabled = true
+subject = "[TO YOU] 비밀번호가 변경됐어요"
+content_path = "./templates/password-changed.html"
+
+[auth.email.notification.email_changed]
+enabled = true
+subject = "[TO YOU] 이메일 주소가 변경됐어요"
+content_path = "./templates/email-changed.html"
+
+[auth.email.notification.phone_changed]
+enabled = true
+subject = "[TO YOU] 휴대폰 번호가 변경됐어요"
+content_path = "./templates/phone-changed.html"
+
+[auth.email.notification.mfa_factor_enrolled]
+enabled = true
+subject = "[TO YOU] 새 인증 수단이 추가됐어요"
+content_path = "./templates/mfa-enrolled.html"
+
+[auth.email.notification.mfa_factor_unenrolled]
+enabled = true
+subject = "[TO YOU] 인증 수단이 삭제됐어요"
+content_path = "./templates/mfa-unenrolled.html"
+
+[auth.email.notification.identity_linked]
+enabled = true
+subject = "[TO YOU] 새 로그인 수단이 연결됐어요"
+content_path = "./templates/identity-linked.html"
+
+[auth.email.notification.identity_unlinked]
+enabled = true
+subject = "[TO YOU] 로그인 수단 연결이 해제됐어요"
+content_path = "./templates/identity-unlinked.html"
 
 [auth.email.smtp]
 enabled = true
@@ -62,3 +117,6 @@ verify_jwt = false
 
 [functions.octomo-phone-auth]
 verify_jwt = false
+
+[functions.send-order-email]
+verify_jwt = true
